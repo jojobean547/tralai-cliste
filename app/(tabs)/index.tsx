@@ -1,10 +1,11 @@
+import { useAuth } from '@/hooks/useAuth';
 import { useBasket } from '@/hooks/useBasket';
 import { useNetwork } from '@/hooks/useNetwork';
 import { useProductCache } from '@/hooks/useProductCache';
 import { supabase } from '@/services/supabase';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +21,7 @@ import {
   View
 } from 'react-native';
 
-// 🔑 Replace these with YOUR values from Supabase
+// 🔑 Set in .env as EXPO_PUBLIC_ANTHROPIC_API_KEY
 const ANTHROPIC_API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY || '';
 
 const STORES = ['Tesco', 'Dunnes Stores', 'SuperValu', 'Lidl', 'Aldi'];
@@ -50,7 +51,31 @@ export default function HomeScreen() {
   const { addItem, basket } = useBasket();
   const { getCachedProduct, cacheProduct, getCachedPrices, cachePrices, addPendingSubmission, getPendingSubmissions, removePendingSubmission } = useProductCache();
   const { isOnline } = useNetwork();
+  const { isGuest } = useAuth();
+  const lookingUpRef = useRef(false);
   const [dealTotal, setDealTotal] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isOnline) return;
+    const pending = getPendingSubmissions() as Array<{
+      id: string; barcode: string; product_name: string; store_name: string; price: number;
+    }>;
+    if (pending.length === 0) return;
+
+    pending.forEach(async (submission) => {
+      const { error } = await supabase
+        .from('prices')
+        .insert({
+          barcode: submission.barcode,
+          product_name: submission.product_name,
+          store_name: submission.store_name,
+          price: submission.price,
+        });
+      if (!error) {
+        removePendingSubmission(submission.id);
+      }
+    });
+  }, [isOnline]);
 
   const getDaysAgo = (dateString: string) => {
     const diff = Date.now() - new Date(dateString).getTime();
@@ -95,6 +120,8 @@ export default function HomeScreen() {
 
 
   const lookUpProduct = async (barcode: string) => {
+    if (lookingUpRef.current) return;
+    lookingUpRef.current = true;
     setScanning(false);
     setLoading(true);
     setError('');
@@ -183,6 +210,7 @@ export default function HomeScreen() {
       }
     } finally {
       setLoading(false);
+      lookingUpRef.current = false;
     }
   };
 
@@ -277,6 +305,15 @@ export default function HomeScreen() {
   };
 
   const submitPrice = async () => {
+
+    if (isGuest) {
+      Alert.alert(
+        '👋 Sign in to contribute',
+        'Guest users can view prices but signing in lets you submit prices and help the community.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
     if (!price || !selectedStore) {
       setError('Please enter a price and select a store');
@@ -377,23 +414,6 @@ export default function HomeScreen() {
     }
   };
 
-  const extractDealQuantity = (dealText: string): number => {
-    if (!dealText) return 1;
-
-    // Match patterns like "3 for €5", "2 for €4", "Any 2 for €3"
-    const match = dealText.match(/(\d+)\s+for/i);
-    if (match) return parseInt(match[1]);
-
-    // Match "Buy 2 get 1 free" = 3 items total
-    const buyGetMatch = dealText.match(/buy\s+(\d+)\s+get\s+(\d+)/i);
-    if (buyGetMatch) {
-      return parseInt(buyGetMatch[1]) + parseInt(buyGetMatch[2]);
-    }
-
-    return 1;
-  };
-
-  
   const extractDealInfo = (dealText: string, dealPricePerItem: number, singlePrice: number): { quantity: number; totalPrice: number } => {
     if (!dealText) return { quantity: 1, totalPrice: singlePrice };
     
@@ -454,20 +474,13 @@ export default function HomeScreen() {
       quality: 0.7,
     });
 
-    //console.log('Image result canceled:', result.canceled);
-    //console.log('Has base64:', !!result.assets?.[0]?.base64);
-
-    if (result.canceled || !result.assets[0].base64) {
-      //console.log('Returning early — no image');
+    if (result.canceled || !result.assets?.length || !result.assets[0].base64) {
       return;
     }
-
-    //console.log('Sending to AI...');
     setAiLoading(true);
     setError('');
 
     try {
-      //console.log('Calling Anthropic API...');
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -515,10 +528,7 @@ export default function HomeScreen() {
         }),
       });
 
-      console.log('API response status:', response.status);
       const data = await response.json();
-
-      console.log('AI raw response:', JSON.stringify(data).substring(0, 300));
       
       const rawResponse = data?.content?.[0]?.text?.trim();
 
@@ -539,8 +549,6 @@ export default function HomeScreen() {
       
       try {
         const priceData = JSON.parse(cleaned);
-
-        //console.log('AI raw response:', cleaned);
 
         // Fill in the single price
         setPrice(String(priceData.single_price));
@@ -597,8 +605,6 @@ export default function HomeScreen() {
         }
       }
     } catch (e: any) {
-        console.log('API Error:', e.message);
-        console.log('Full error:', JSON.stringify(e));
         Alert.alert('API Error', e.message || JSON.stringify(e));
     } finally {
       setAiLoading(false);
@@ -673,8 +679,7 @@ export default function HomeScreen() {
                         {entry.store_name}
                       </Text>
                       <Text style={styles.daysAgo}>
-                        {getDaysAgo(entry.created_at)}
-                        {entry.confirms > 0 ? ` · ✅ ${entry.confirms} confirmed` : ''}
+                        {entry.confirms > 0 ? `✅ ${entry.confirms} confirmed` : ''}
                         {entry.flags > 0 ? ` · 🚩 ${entry.flags} flagged` : ''}
                       </Text>
                     </View>
@@ -754,7 +759,7 @@ export default function HomeScreen() {
                   keyboardType="decimal-pad"
                   placeholder="e.g. 3.50"
                   value={price}
-                  onChangeText={setPrice}
+                  onChangeText={(text) => { setPrice(text); setDealTotal(null); }}
                 />
 
                 <TouchableOpacity
