@@ -393,19 +393,41 @@ export default function HomeScreen() {
     return 1;
   };
 
-  const extractDealInfo = (dealText: string, dealPricePerItem: number): { quantity: number; totalPrice: number } => {
-    if (!dealText) return { quantity: 1, totalPrice: dealPricePerItem };
-
-    // Match "3 for €5", "2 for €4" — extract total price from deal text
-    const forMatch = dealText.match(/(\d+)\s+for\s+[€£$]?\s*(\d+\.?\d*)/i);
+  
+  const extractDealInfo = (dealText: string, dealPricePerItem: number, singlePrice: number): { quantity: number; totalPrice: number } => {
+    if (!dealText) return { quantity: 1, totalPrice: singlePrice };
+    
+    // Match "3 for 2" — buy 3 pay for 2
+    const forMatch = dealText.match(/(\d+)\s+for\s+(\d+)$/i);
     if (forMatch) {
+      const buyQty = parseInt(forMatch[1]);
+      const payQty = parseInt(forMatch[2]);
+
+      // If payQty looks like a small number (not a price), treat as "pay for X items"
+      if (payQty < 10 && !dealText.includes('€') && !dealText.includes('£') && !dealText.includes('$')) {
+        return {
+          quantity: buyQty,
+          totalPrice: payQty * singlePrice  // pay for 2 items at single price
+        };
+      }
+
+      // Otherwise treat payQty as a euro amount e.g. "3 for €5"
       return {
-        quantity: parseInt(forMatch[1]),
-        totalPrice: parseFloat(forMatch[2])
+        quantity: buyQty,
+        totalPrice: payQty
       };
     }
 
-    // Buy 2 get 1 free = 3 items, total = 2x single price
+    // Match "3 for €5.00" explicitly
+    const priceMatch = dealText.match(/(\d+)\s+for\s+[€£$]?\s*(\d+\.?\d*)/i);
+    if (priceMatch) {
+      return {
+        quantity: parseInt(priceMatch[1]),
+        totalPrice: parseFloat(priceMatch[2])
+      };
+    }
+
+    // Buy 2 get 1 free = 3 items, pay for 2
     const buyGetMatch = dealText.match(/buy\s+(\d+)\s+get\s+(\d+)/i);
     if (buyGetMatch) {
       const paying = parseInt(buyGetMatch[1]);
@@ -416,7 +438,7 @@ export default function HomeScreen() {
       };
     }
 
-    return { quantity: 1, totalPrice: dealPricePerItem };
+    return { quantity: 1, totalPrice: singlePrice };
   };
 
   const scanPriceTag = async () => {
@@ -497,7 +519,13 @@ export default function HomeScreen() {
       const data = await response.json();
 
       console.log('AI raw response:', JSON.stringify(data).substring(0, 300));
+      
       const rawResponse = data?.content?.[0]?.text?.trim();
+
+      if (!rawResponse) {
+        Alert.alert('Could not read price', 'Please try again or type the price manually.');
+        return;
+      }
 
       const cleaned = rawResponse
         .replace(/```json\n?/g, '')
@@ -538,7 +566,8 @@ export default function HomeScreen() {
                 onPress: () => {
                   const { quantity, totalPrice } = extractDealInfo(
                     priceData.deal || '',
-                    priceData.deal_price_per_item
+                    priceData.deal_price_per_item,
+                    priceData.single_price
                   );
                   setPrice(String(priceData.deal_price_per_item.toFixed(2)));
                   setDealQuantity(quantity);

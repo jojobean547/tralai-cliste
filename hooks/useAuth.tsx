@@ -1,6 +1,11 @@
 import { supabase } from '@/services/supabase';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+let GoogleSignin: any = null;
+try {
+  GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
+} catch (e) {
+  console.log('GoogleSignin not available in Expo Go');
+}
 
 type User = {
   id: string;
@@ -27,11 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Configure Google Sign-In
-    GoogleSignin.configure({
-      webClientId: '762952098980-l53cuifr0eaavp64m16ifehj25gsl3qp.apps.googleusercontent.com',
-      scopes: ['email', 'profile'],
-    });
-
+    if (GoogleSignin) {
+      GoogleSignin.configure({
+        webClientId: '762952098980-l53cuifr0eaavp64m16ifehj25gsl3qp.apps.googleusercontent.com',
+        scopes: ['email', 'profile'],
+      });
+    }
+    
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -66,21 +73,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogle = async () => {
+    if (!GoogleSignin) {
+      throw new Error('Google Sign-In is not available in Expo Go. Please use a development build.');
+    }
     try {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.data?.idToken;
-
       if (!idToken) throw new Error('No ID token found');
-
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
         token: idToken,
       });
-
       if (error) throw error;
     } catch (error: any) {
-      console.log('Google Sign-In error:', error.message);
       throw error;
     }
   };
