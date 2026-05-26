@@ -16,34 +16,26 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { Radii, Spacing, Typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { StyleSheet, Text, View } from 'react-native';
 
-type Props = {
-  isOnline: boolean;
-};
+type Props = { isOnline: boolean };
 
 export default function OfflineBanner({ isOnline }: Props) {
+  const { colors } = useTheme();
   if (isOnline) return null;
-
   return (
-    <View style={styles.banner}>
-      <Text style={styles.text}>📡 You're offline — showing cached data</Text>
+    <View style={styles(colors).banner}>
+      <Text style={styles(colors).text}>
+        📡 You're offline — showing cached data
+      </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  banner: {
-    backgroundColor: '#f39c12',
-    padding: 8,
-    borderRadius: 8,
-    width: '100%',
-    marginBottom: 12,
-  },
-  text: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-});
+const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
+  StyleSheet.create({
+    banner: { backgroundColor: c.accentGold, padding: Spacing.sm, borderRadius: Radii.sm, width: '100%', marginBottom: Spacing.md },
+    text: { color: '#1A1C1E', textAlign: 'center', fontSize: Typography.bodySmall, fontWeight: '600' },
+  });

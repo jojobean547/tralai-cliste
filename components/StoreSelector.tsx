@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { Radii, Spacing, Typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
@@ -25,17 +27,20 @@ type Props = {
 };
 
 export default function StoreSelector({ stores, selectedStore, onSelect }: Props) {
+  const { colors } = useTheme();
+  const s = styles(colors);
   return (
     <>
-      <Text style={styles.label}>Which store?</Text>
-      <View style={styles.row}>
+      <Text style={s.label}>Which store?</Text>
+      <View style={s.row}>
         {stores.map(store => (
           <TouchableOpacity
             key={store}
-            style={[styles.button, selectedStore === store && styles.buttonSelected]}
+            style={[s.pill, selectedStore === store && s.pillSelected]}
             onPress={() => onSelect(store)}
+            activeOpacity={0.8}
           >
-            <Text style={[styles.buttonText, selectedStore === store && styles.buttonTextSelected]}>
+            <Text style={[s.pillText, selectedStore === store && s.pillTextSelected]}>
               {store}
             </Text>
           </TouchableOpacity>
@@ -45,38 +50,12 @@ export default function StoreSelector({ stores, selectedStore, onSelect }: Props
   );
 }
 
-const styles = StyleSheet.create({
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  button: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  buttonSelected: {
-    backgroundColor: '#2ecc71',
-    borderColor: '#2ecc71',
-  },
-  buttonText: {
-    fontSize: 13,
-    color: '#444',
-  },
-  buttonTextSelected: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-});
+const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
+  StyleSheet.create({
+    label: { fontSize: Typography.body, fontWeight: '500', color: c.textSecondary, marginBottom: Spacing.sm, marginTop: Spacing.md },
+    row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.md },
+    pill: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radii.pill, borderWidth: 0.5, borderColor: c.border, backgroundColor: c.surface, minHeight: 36 },
+    pillSelected: { backgroundColor: c.primaryGreen, borderColor: c.primaryGreen },
+    pillText: { fontSize: Typography.bodySmall, color: c.textPrimary },
+    pillTextSelected: { color: '#FFFFFF', fontWeight: '600' },
+  });

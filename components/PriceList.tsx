@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { Radii, Spacing, Typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { PriceEntry } from '@/types/index';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -34,53 +36,66 @@ type Props = {
 };
 
 export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }: Props) {
+  const { colors } = useTheme();
+  const s = styles(colors);
   if (entries.length === 0) return null;
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>💰 Price Comparison</Text>
-      <Text style={styles.freshnessNote}>Showing prices from the last 30 days only</Text>
+    <View style={s.card}>
+      <Text style={s.title}>💰 Price Comparison</Text>
+      <Text style={s.freshnessNote}>Showing prices from the last 30 days only</Text>
 
       {entries.map((entry, index) => {
         const cheapest = index === 0;
-        const daysAgo = getDaysAgo(entry.created_at);
-
         return (
-          <View
-            key={entry.id}
-            style={[styles.row, cheapest && styles.cheapestRow]}
-          >
-            <View style={styles.rowLeft}>
-              {cheapest && <Text style={styles.crown}>🏆 </Text>}
-              <View>
-                <Text style={[styles.storeName, cheapest && styles.cheapestText]}>
-                  {entry.store_name}
-                </Text>
-                <Text style={styles.meta}>
-                  {entry.confirms > 0 ? `✅ ${entry.confirms} confirmed` : ''}
-                  {entry.flags > 0 ? ` · 🚩 ${entry.flags} flagged` : ''}
-                </Text>
+          <View key={entry.id} style={[s.row, cheapest && s.cheapestRow]}>
+
+            <View style={s.rowLeft}>
+              {cheapest && (
+                <View style={s.cheapestBadge}>
+                  <Text style={s.cheapestBadgeText}>★ Cheapest</Text>
+                </View>
+              )}
+              <Text style={[s.storeName, cheapest && s.cheapestStore]}>
+                {cheapest ? '🏆 ' : ''}{entry.store_name}
+              </Text>
+              <Text style={s.meta}>
+                {getDaysAgo(entry.created_at)}
+                {entry.confirms > 0 ? ` · ✅ ${entry.confirms}` : ''}
+                {entry.flags > 0 ? ` · 🚩 ${entry.flags}` : ''}
+              </Text>
+            </View>
+
+            <View style={s.rowRight}>
+              <Text style={[s.price, cheapest && s.cheapestPrice]}>
+                €{entry.price.toFixed(2)}
+              </Text>
+              <View style={s.actions}>
+                <TouchableOpacity
+                  style={s.confirmBtn}
+                  onPress={() => onConfirm(entry.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={s.actionText}>👍</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={s.flagBtn}
+                  onPress={() => onFlag(entry.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={s.actionText}>🚩</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.basketBtn, cheapest && s.basketBtnCheapest]}
+                  onPress={() => onAddToBasket(entry)}
+                >
+                  <Text style={[s.basketBtnText, cheapest && s.basketBtnTextCheapest]}>
+                    + Basket
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.rowRight}>
-              <Text style={[styles.price, cheapest && styles.cheapestText]}>
-                €{entry.price.toFixed(2)}
-              </Text>
-              <Text style={styles.meta}>{daysAgo}</Text>
-            </View>
-
-            <View style={styles.voteRow}>
-              <TouchableOpacity style={styles.confirmButton} onPress={() => onConfirm(entry.id)}>
-                <Text style={styles.voteButtonText}>👍</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.flagButton} onPress={() => onFlag(entry.id)}>
-                <Text style={styles.voteButtonText}>🚩</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.addButton} onPress={() => onAddToBasket(entry)}>
-                <Text style={styles.addButtonText}>+ Basket</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         );
       })}
@@ -88,40 +103,28 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    width: '100%',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  title: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#333' },
-  freshnessNote: { fontSize: 11, color: '#999', marginBottom: 8, fontStyle: 'italic' },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  cheapestRow: { backgroundColor: '#f0fff4', borderRadius: 8, paddingHorizontal: 8 },
-  rowLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  rowRight: { alignItems: 'flex-end' },
-  crown: { fontSize: 16 },
-  storeName: { fontSize: 15, color: '#444' },
-  cheapestText: { color: '#27ae60', fontWeight: 'bold' },
-  price: { fontSize: 16, fontWeight: '600', color: '#333' },
-  meta: { fontSize: 11, color: '#999', marginTop: 2 },
-  voteRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  confirmButton: { backgroundColor: '#d5f5e3', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  flagButton: { backgroundColor: '#fde8e8', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  voteButtonText: { fontSize: 12 },
-  addButton: { marginTop: 6, backgroundColor: '#3498db', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  addButtonText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-});
+const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
+  StyleSheet.create({
+    card: { backgroundColor: c.surface, padding: Spacing.lg, borderRadius: Radii.lg, width: '100%', marginBottom: Spacing.md, borderWidth: 0.5, borderColor: c.border },
+    title: { fontSize: Typography.heading3, fontWeight: '600', color: c.textPrimary, marginBottom: Spacing.xs },
+    freshnessNote: { fontSize: Typography.tiny, color: c.textSecondary, marginBottom: Spacing.md, fontStyle: 'italic' },
+    row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.sm, borderBottomWidth: 0.5, borderBottomColor: c.border },
+    cheapestRow: { backgroundColor: c.greenLight, borderRadius: Radii.sm, paddingHorizontal: Spacing.sm, borderBottomWidth: 0 },
+    rowLeft: { flex: 1, gap: 2 },
+    cheapestBadge: { backgroundColor: c.primaryGreen, alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: Radii.pill, marginBottom: 2 },
+    cheapestBadgeText: { fontSize: Typography.tiny, color: '#FFFFFF', fontWeight: '600' },
+    storeName: { fontSize: Typography.body, color: c.textPrimary, fontWeight: '500' },
+    cheapestStore: { color: c.primaryGreen },
+    meta: { fontSize: Typography.tiny, color: c.textSecondary, marginTop: 2 },
+    rowRight: { alignItems: 'flex-end', gap: Spacing.xs },
+    price: { fontSize: Typography.heading3, fontWeight: '600', color: c.textPrimary },
+    cheapestPrice: { color: c.primaryGreen },
+    actions: { flexDirection: 'row', gap: Spacing.xs, alignItems: 'center' },
+    confirmBtn: { backgroundColor: c.infoBg, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: Radii.sm },
+    flagBtn: { backgroundColor: c.errorBg, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: Radii.sm },
+    actionText: { fontSize: Typography.caption },
+    basketBtn: { backgroundColor: c.surface, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: Radii.sm, borderWidth: 0.5, borderColor: c.border },
+    basketBtnCheapest: { backgroundColor: c.primaryGreen, borderColor: c.primaryGreen },
+    basketBtnText: { fontSize: Typography.tiny, color: c.textSecondary, fontWeight: '600' },
+    basketBtnTextCheapest: { color: '#FFFFFF' },
+  });

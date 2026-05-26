@@ -1,124 +1,163 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Tralaí Cliste — Irish community grocery price comparison app
+// Copyright (C) 2026 Tralaí Cliste Contributors
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+import { Radii, Spacing, TouchTargets, Typography } from '@/constants/theme';
 import { useBasket } from '@/hooks/useBasket';
-import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
+import {
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BasketScreen() {
   const { basket, removeItem, updateQuantity, clearBasket, total, itemCount } = useBasket();
+  const { colors } = useTheme();
+  const s = styles(colors);
 
   if (basket.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>🛒</Text>
-        <Text style={styles.emptyTitle}>Your basket is empty</Text>
-        <Text style={styles.emptySubtitle}>
-          Scan a product and tap "+ Basket" to add items
-        </Text>
-      </View>
+      <SafeAreaView style={s.safe}>
+        <View style={s.emptyContainer}>
+          <Text style={s.emptyEmoji}>🛒</Text>
+          <Text style={s.emptyTitle}>Your basket is empty</Text>
+          <Text style={s.emptySubtitle}>
+            Scan a product and tap "+ Basket" to add items
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🛒 My Basket</Text>
-      <FlatList
-        data={basket}
-        keyExtractor={item => `${item.barcode}-${item.store_name}`}
-        renderItem={({ item }) => (
-          <View style={styles.itemCard}>
-            <View style={styles.itemLeft}>
+    <SafeAreaView style={s.safe}>
+      <View style={s.container}>
+        <View style={s.header}>
+          <Text style={s.headerIcon}>🛒</Text>
+          <Text style={s.headerTitle}>My Basket</Text>
+        </View>
+
+        <FlatList
+          data={basket}
+          keyExtractor={item => `${item.barcode}-${item.store_name}`}
+          contentContainerStyle={{ paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl }}
+          renderItem={({ item }) => (
+            <View style={s.itemCard}>
               {item.image_url
-                ? <Image source={{ uri: item.image_url }} style={styles.itemImage} />
-                : <View style={styles.itemImagePlaceholder}>
-                    <Text style={styles.placeholderEmoji}>📦</Text>
+                ? <Image source={{ uri: item.image_url }} style={s.itemImage} />
+                : <View style={s.itemImagePlaceholder}>
+                    <Text style={{ fontSize: 24 }}>📦</Text>
                   </View>
               }
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName} numberOfLines={2}>
-                  {item.product_name}
-                </Text>
-                <Text style={styles.itemStore}>{item.store_name}</Text>
-                <Text style={styles.itemPrice}>
-                  €{item.dealTotal ? item.dealTotal.toFixed(2) : (item.price * item.quantity).toFixed(2)}
+              <View style={s.itemInfo}>
+                <Text style={s.itemName} numberOfLines={2}>{item.product_name}</Text>
+                <Text style={s.itemStore}>{item.store_name}</Text>
+                <Text style={s.itemPrice}>
+                  €{(item.dealTotal ?? item.price * item.quantity).toFixed(2)}
                 </Text>
               </View>
-            </View>
-            <View style={styles.itemRight}>
-              <View style={styles.quantityRow}>
+              <View style={s.itemRight}>
+                <View style={s.qtyRow}>
+                  <TouchableOpacity
+                    style={s.qtyBtn}
+                    onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity - 1)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={s.qtyBtnText}>−</Text>
+                  </TouchableOpacity>
+                  <Text style={s.qtyText}>{item.quantity}</Text>
+                  <TouchableOpacity
+                    style={s.qtyBtn}
+                    onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity + 1)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={s.qtyBtnText}>+</Text>
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity
-                  style={styles.qtyButton}
-                  onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity - 1)}
+                  style={s.removeBtn}
+                  onPress={() => removeItem(item.barcode, item.store_name)}
                 >
-                  <Text style={styles.qtyButtonText}>−</Text>
-                </TouchableOpacity>
-                <Text style={styles.qtyText}>{item.quantity}</Text>
-                <TouchableOpacity
-                  style={styles.qtyButton}
-                  onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity + 1)}
-                >
-                  <Text style={styles.qtyButtonText}>+</Text>
+                  <Text style={s.removeBtnText}>Remove</Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={() => removeItem(item.barcode, item.store_name)}
-              >
-                <Text style={styles.removeButtonText}>Remove</Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        )}
-        style={styles.list}
-      />
-      <View style={styles.totalCard}>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>{itemCount} item{itemCount !== 1 ? 's' : ''}</Text>
-          <Text style={styles.totalAmount}>€{total.toFixed(2)}</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.clearButton}
-          onPress={() => Alert.alert(
-            'Clear basket?',
-            'This will remove all items.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Clear', style: 'destructive', onPress: clearBasket }
-            ]
           )}
-        >
-          <Text style={styles.clearButtonText}>Clear Basket 🗑️</Text>
-        </TouchableOpacity>
+        />
+
+        <View style={s.totalCard}>
+          <View style={s.totalRow}>
+            <Text style={s.totalLabel}>{itemCount} item{itemCount !== 1 ? 's' : ''}</Text>
+            <Text style={s.totalAmount}>€{total.toFixed(2)}</Text>
+          </View>
+          <TouchableOpacity
+            style={s.clearBtn}
+            onPress={() => Alert.alert(
+              'Clear basket?',
+              'This will remove all items.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Clear', style: 'destructive', onPress: clearBasket }
+              ]
+            )}
+          >
+            <Text style={s.clearBtnText}>Clear Basket 🗑️</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, backgroundColor: '#f9f9f9' },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
-  emptyTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 8, color: '#333' },
-  emptySubtitle: { fontSize: 15, color: '#888', textAlign: 'center', lineHeight: 22 },
-  title: { fontSize: 26, fontWeight: 'bold', padding: 20, paddingBottom: 10 },
-  list: { flex: 1 },
-  itemCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginVertical: 6, padding: 12, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-  itemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  itemImage: { width: 56, height: 56, resizeMode: 'contain', borderRadius: 8, marginRight: 12 },
-  itemImagePlaceholder: { width: 56, height: 56, backgroundColor: '#f0f0f0', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  placeholderEmoji: { fontSize: 24 },
-  itemInfo: { flex: 1 },
-  itemName: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 2 },
-  itemStore: { fontSize: 12, color: '#888', marginBottom: 2 },
-  itemPrice: { fontSize: 15, fontWeight: 'bold', color: '#2ecc71' },
-  itemRight: { alignItems: 'flex-end', marginLeft: 8 },
-  quantityRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  qtyButton: { width: 28, height: 28, backgroundColor: '#f0f0f0', borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  qtyButtonText: { fontSize: 18, color: '#333', fontWeight: 'bold' },
-  qtyText: { fontSize: 16, fontWeight: '600', marginHorizontal: 10, minWidth: 20, textAlign: 'center' },
-  removeButton: { paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#ffe0e0', borderRadius: 10 },
-  removeButtonText: { fontSize: 12, color: '#e74c3c', fontWeight: '600' },
-  totalCard: { backgroundColor: '#fff', margin: 16, padding: 20, borderRadius: 16, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  totalLabel: { fontSize: 16, color: '#666' },
-  totalAmount: { fontSize: 28, fontWeight: 'bold', color: '#2ecc71' },
-  clearButton: { backgroundColor: '#fff0f0', padding: 12, borderRadius: 10, alignItems: 'center' },
-  clearButtonText: { color: '#e74c3c', fontWeight: '600', fontSize: 15 },
-});
+const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: c.background, paddingTop: 0 },
+    container: { flex: 1, backgroundColor: c.background },
+    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xxl },
+    emptyEmoji: { fontSize: 64, marginBottom: Spacing.lg },
+    emptyTitle: { fontSize: Typography.heading2, fontWeight: '600', color: c.textPrimary, marginBottom: Spacing.sm },
+    emptySubtitle: { fontSize: Typography.body, color: c.textSecondary, textAlign: 'center', lineHeight: 24 },
+    header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.xl, paddingBottom: Spacing.md },
+    headerIcon: { fontSize: Typography.heading2 },
+    headerTitle: { fontSize: Typography.heading2, fontWeight: '600', color: c.textPrimary },
+    itemCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, marginBottom: Spacing.sm, padding: Spacing.md, borderRadius: Radii.lg, borderWidth: 0.5, borderColor: c.border },
+    itemImage: { width: 56, height: 56, resizeMode: 'contain', borderRadius: Radii.sm, marginRight: Spacing.md },
+    itemImagePlaceholder: { width: 56, height: 56, backgroundColor: c.greenLight, borderRadius: Radii.sm, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
+    itemInfo: { flex: 1 },
+    itemName: { fontSize: Typography.heading3, fontWeight: '500', color: c.textPrimary, marginBottom: 2 },
+    itemStore: { fontSize: Typography.body, color: c.textSecondary, marginBottom: 2 },
+    itemPrice: { fontSize: Typography.heading3, fontWeight: '600', color: c.primaryGreen },
+    itemRight: { alignItems: 'flex-end', marginLeft: Spacing.sm },
+    qtyRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
+    qtyBtn: { width: 32, height: 32, backgroundColor: c.greenLight, borderRadius: Radii.full, justifyContent: 'center', alignItems: 'center' },
+    qtyBtnText: { fontSize: Typography.heading3, color: c.primaryGreen, fontWeight: '600' },
+    qtyText: { fontSize: Typography.body, fontWeight: '600', color: c.textPrimary, marginHorizontal: Spacing.sm, minWidth: 20, textAlign: 'center' },
+    removeBtn: { paddingHorizontal: Spacing.sm, paddingVertical: 4, backgroundColor: c.errorBg, borderRadius: Radii.sm },
+    removeBtnText: { fontSize: Typography.caption, color: c.error, fontWeight: '600' },
+    totalCard: { backgroundColor: c.surface, margin: Spacing.xl, padding: Spacing.xl, borderRadius: Radii.lg, borderWidth: 0.5, borderColor: c.border },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
+    totalLabel: { fontSize: Typography.heading3, color: c.textSecondary },
+    totalAmount: { fontSize: 36, fontWeight: '700', color: c.primaryGreen },
+    clearBtn: { backgroundColor: c.errorBg, padding: Spacing.md, borderRadius: Radii.md, alignItems: 'center', borderWidth: 0.5, borderColor: c.errorBorder, minHeight: TouchTargets.minHeight, justifyContent: 'center' },
+    clearBtnText: { color: c.error, fontWeight: '600', fontSize: Typography.heading3 },
+  });

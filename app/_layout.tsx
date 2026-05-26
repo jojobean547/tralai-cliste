@@ -2,6 +2,7 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { BasketProvider } from '@/hooks/useBasket';
 import { Stack, router } from 'expo-router';
 import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 function RootLayoutNav() {
   const { user, isGuest, isLoading } = useAuth();
@@ -26,10 +27,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <BasketProvider>
-        <RootLayoutNav />
-      </BasketProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <BasketProvider>
+          <RootLayoutNav />
+        </BasketProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

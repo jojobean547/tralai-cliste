@@ -18,15 +18,12 @@
 
 import StoreSelector from '@/components/StoreSelector';
 import { STORES } from '@/constants/stores';
+import { Radii, Spacing, TouchTargets, Typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { Product } from '@/types/index';
 import {
-  ActivityIndicator,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  ActivityIndicator, Image, StyleSheet,
+  Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 
 type Props = {
@@ -42,47 +39,44 @@ type Props = {
 };
 
 export default function ProductCard({
-  product,
-  price,
-  onPriceChange,
-  onScanTag,
-  aiLoading,
-  selectedStore,
-  onStoreSelect,
-  onSubmit,
-  saving,
+  product, price, onPriceChange, onScanTag,
+  aiLoading, selectedStore, onStoreSelect, onSubmit, saving,
 }: Props) {
+  const { colors } = useTheme();
+  const s = styles(colors);
+
   return (
-    <View style={styles.card}>
+    <View style={s.card}>
       {!!product.image_url && (
-        <Image source={{ uri: product.image_url }} style={styles.image} />
+        <Image source={{ uri: product.image_url }} style={s.image} />
       )}
+      <Text style={s.name}>{product.product_name || 'Unknown product'}</Text>
+      {!!product.brands && <Text style={s.brand}>{product.brands}</Text>}
+      {!!product.quantity && <Text style={s.quantity}>{product.quantity}</Text>}
 
-      <Text style={styles.name}>{product.product_name || 'Unknown product'}</Text>
-      <Text style={styles.brand}>{product.brands || ''}</Text>
-      <Text style={styles.quantity}>{product.quantity || ''}</Text>
-
-      <Text style={styles.sectionLabel}>What's the price? (€)</Text>
+      <Text style={s.label}>What's the price? (€)</Text>
       <TextInput
-        style={styles.priceInput}
+        style={s.input}
         keyboardType="decimal-pad"
         placeholder="e.g. 3.50"
+        placeholderTextColor={colors.textSecondary}
         value={price}
         onChangeText={onPriceChange}
       />
 
       <TouchableOpacity
-        style={styles.scanButton}
+        style={s.scanBtn}
         onPress={onScanTag}
         disabled={aiLoading}
+        activeOpacity={0.85}
       >
         {aiLoading ? (
           <>
-            <ActivityIndicator color="#fff" size="small" />
-            <Text style={styles.scanButtonText}> AI reading price...</Text>
+            <ActivityIndicator color="#FFFFFF" size="small" />
+            <Text style={s.scanBtnText}> AI reading price...</Text>
           </>
         ) : (
-          <Text style={styles.scanButtonText}>📷 Scan Price Tag Instead</Text>
+          <Text style={s.scanBtnText}>📷  Scan Price Tag Instead</Text>
         )}
       </TouchableOpacity>
 
@@ -92,72 +86,32 @@ export default function ProductCard({
         onSelect={onStoreSelect}
       />
 
-      <TouchableOpacity style={styles.submitButton} onPress={onSubmit} disabled={saving}>
-        {saving ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitButtonText}>Submit Price 💾</Text>
-        )}
+      <TouchableOpacity
+        style={s.submitBtn}
+        onPress={onSubmit}
+        disabled={saving}
+        activeOpacity={0.85}
+      >
+        {saving
+          ? <ActivityIndicator color="#FFFFFF" />
+          : <Text style={s.submitBtnText}>Submit Price 💾</Text>
+        }
       </TouchableOpacity>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    width: '100%',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  image: {
-    width: 150,
-    height: 150,
-    resizeMode: 'contain',
-    marginBottom: 12,
-    alignSelf: 'center',
-  },
-  name: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 },
-  brand: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 2 },
-  quantity: { fontSize: 13, color: '#999', textAlign: 'center', marginBottom: 16 },
-  sectionLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  priceInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 18,
-    width: '100%',
-    marginBottom: 8,
-    backgroundColor: '#fafafa',
-  },
-  scanButton: {
-    backgroundColor: '#9b59b6',
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  scanButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  submitButton: {
-    backgroundColor: '#2ecc71',
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  submitButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-});
+const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
+  StyleSheet.create({
+    card: { backgroundColor: c.surface, padding: Spacing.xl, borderRadius: Radii.lg, width: '100%', marginBottom: Spacing.xl, borderWidth: 0.5, borderColor: c.border },
+    image: { width: 120, height: 120, resizeMode: 'contain', marginBottom: Spacing.md, alignSelf: 'center' },
+    name: { fontSize: Typography.heading3, fontWeight: '600', color: c.textPrimary, textAlign: 'center', marginBottom: Spacing.xs },
+    brand: { fontSize: Typography.bodySmall, color: c.textSecondary, textAlign: 'center', marginBottom: 2 },
+    quantity: { fontSize: Typography.caption, color: c.textSecondary, textAlign: 'center', marginBottom: Spacing.md },
+    label: { fontSize: Typography.body, fontWeight: '500', color: c.textSecondary, marginBottom: Spacing.sm, marginTop: Spacing.md },
+    input: { borderWidth: 0.5, borderColor: c.border, borderRadius: Radii.sm, padding: Spacing.md, fontSize: Typography.heading3, width: '100%', marginBottom: Spacing.sm, backgroundColor: c.background, color: c.textPrimary, minHeight: TouchTargets.minHeight },
+    scanBtn: { backgroundColor: c.accentPurple, padding: Spacing.md, borderRadius: Radii.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginBottom: Spacing.sm, minHeight: TouchTargets.minHeight },
+    scanBtnText: { color: '#FFFFFF', fontSize: Typography.body, fontWeight: '600' },
+    submitBtn: { backgroundColor: c.primaryGreen, padding: Spacing.md, borderRadius: Radii.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm, minHeight: TouchTargets.minHeight, width:'100%' },
+    submitBtnText: { color: '#FFFFFF', fontSize: Typography.body, fontWeight: '600' },
+  });
