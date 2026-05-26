@@ -39,7 +39,7 @@ export default function LoginScreen() {
         <View style={s.logoContainer}>
           <View style={s.logoBox}>
             <Image
-              source={require('@/assets/images/tralai_cliste_app_logo_no_bg.png')}
+              source={require('@/assets/images/tralai_cliste_app_logo_outline_no_bg.png')}
               style={s.logoImage}
               resizeMode="contain"
             />
