@@ -93,7 +93,7 @@ export default function ProductCard({
         activeOpacity={0.85}
       >
         {saving
-          ? <ActivityIndicator color="#FFFFFF" />
+          ? <ActivityIndicator color={colors.primaryGreen} />
           : <Text style={s.submitBtnText}>Submit Price 💾</Text>
         }
       </TouchableOpacity>
@@ -112,6 +112,6 @@ const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['color
     input: { borderWidth: 0.5, borderColor: c.border, borderRadius: Radii.sm, padding: Spacing.md, fontSize: Typography.heading3, width: '100%', marginBottom: Spacing.sm, backgroundColor: c.background, color: c.textPrimary, minHeight: TouchTargets.minHeight },
     scanBtn: { backgroundColor: c.accentPurple, padding: Spacing.md, borderRadius: Radii.md, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginBottom: Spacing.sm, minHeight: TouchTargets.minHeight },
     scanBtnText: { color: '#FFFFFF', fontSize: Typography.body, fontWeight: '600' },
-    submitBtn: { backgroundColor: c.primaryGreen, padding: Spacing.md, borderRadius: Radii.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm, minHeight: TouchTargets.minHeight, width:'100%' },
-    submitBtnText: { color: '#FFFFFF', fontSize: Typography.body, fontWeight: '600' },
+    submitBtn: { backgroundColor: c.greenLight, padding: Spacing.md, borderRadius: Radii.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm, minHeight: TouchTargets.minHeight, width:'100%' },
+    submitBtnText: { color: c.primaryGreen, fontSize: Typography.body, fontWeight: '600' },
   });

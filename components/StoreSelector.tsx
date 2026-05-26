@@ -55,7 +55,7 @@ const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['color
     label: { fontSize: Typography.body, fontWeight: '500', color: c.textSecondary, marginBottom: Spacing.sm, marginTop: Spacing.md },
     row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.md },
     pill: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radii.pill, borderWidth: 0.5, borderColor: c.border, backgroundColor: c.surface, minHeight: 36 },
-    pillSelected: { backgroundColor: c.primaryGreen, borderColor: c.primaryGreen },
+    pillSelected: { backgroundColor: c.greenLight, borderColor: c.primaryGreen },
     pillText: { fontSize: Typography.bodySmall, color: c.textPrimary },
-    pillTextSelected: { color: '#FFFFFF', fontWeight: '600' },
+    pillTextSelected: { color: c.primaryGreen, fontWeight: '600' },
   });
