@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { StoreBadge } from '@/components/ui/StoreBadge';
 import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -28,34 +29,28 @@ type Props = {
 
 export default function StoreSelector({ stores, selectedStore, onSelect }: Props) {
   const { colors } = useTheme();
-  const s = styles(colors);
+
   return (
     <>
-      <Text style={s.label}>Which store?</Text>
-      <View style={s.row}>
-        {stores.map(store => (
-          <TouchableOpacity
-            key={store}
-            style={[s.pill, selectedStore === store && s.pillSelected]}
-            onPress={() => onSelect(store)}
-            activeOpacity={0.8}
-          >
-            <Text style={[s.pillText, selectedStore === store && s.pillTextSelected]}>
-              {store}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Which store?</Text>
+      <View style={styles.row}>
+        {stores.map(store => {
+          const isSelected = selectedStore === store;
+          return (
+            <TouchableOpacity key={store} onPress={() => onSelect(store)} activeOpacity={0.8}>
+              <View style={[styles.selectionRing, { borderColor: isSelected ? colors.primaryGreen : 'transparent' }]}>
+                <StoreBadge store={store} />
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </>
   );
 }
 
-const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
-  StyleSheet.create({
-    label: { fontSize: Typography.body, fontWeight: '500', color: c.textSecondary, marginBottom: Spacing.sm, marginTop: Spacing.md },
-    row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.md },
-    pill: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radii.pill, borderWidth: 0.5, borderColor: c.border, backgroundColor: c.surface, minHeight: 36 },
-    pillSelected: { backgroundColor: c.greenLight, borderColor: c.primaryGreen },
-    pillText: { fontSize: Typography.bodySmall, color: c.textPrimary },
-    pillTextSelected: { color: c.primaryGreen, fontWeight: '600' },
-  });
+const styles = StyleSheet.create({
+  label: { fontSize: Typography.body, fontWeight: '500', marginBottom: Spacing.sm, marginTop: Spacing.md },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.md },
+  selectionRing: { borderWidth: 2, borderRadius: Radii.pill },
+});

@@ -16,148 +16,158 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Radii, Spacing, TouchTargets, Typography } from '@/constants/theme';
+import { AppAlert } from '@/components/ui/AppAlert';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Radii, Spacing, Typography } from '@/constants/theme';
+import { useAlert } from '@/hooks/useAlert';
 import { useBasket } from '@/hooks/useBasket';
 import { useTheme } from '@/hooks/useTheme';
 import {
-  Alert,
   FlatList,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BasketScreen() {
   const { basket, removeItem, updateQuantity, clearBasket, total, itemCount } = useBasket();
   const { colors } = useTheme();
-  const s = styles(colors);
+  const { showAlert, alertProps } = useAlert();
 
   if (basket.length === 0) {
     return (
-      <SafeAreaView style={s.safe}>
-        <View style={s.emptyContainer}>
-          <Text style={s.emptyEmoji}>🛒</Text>
-          <Text style={s.emptyTitle}>Your basket is empty</Text>
-          <Text style={s.emptySubtitle}>
-            Scan a product and tap "+ Basket" to add items
-          </Text>
-        </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon={<Text style={styles.emptyEmoji}>🛒</Text>}
+          title="Your basket is empty"
+          subtitle='Scan a product and tap "Add" to add items'
+        />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={s.safe}>
-      <View style={s.container}>
-        <View style={s.header}>
-          <Text style={s.headerIcon}>🛒</Text>
-          <Text style={s.headerTitle}>My Basket</Text>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerIcon}>🛒</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>My Basket</Text>
         </View>
 
         <FlatList
           data={basket}
           keyExtractor={item => `${item.barcode}-${item.store_name}`}
-          contentContainerStyle={{ paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl }}
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <View style={s.itemCard}>
-              {item.image_url
-                ? <Image source={{ uri: item.image_url }} style={s.itemImage} />
-                : <View style={s.itemImagePlaceholder}>
-                    <Text style={{ fontSize: 24 }}>📦</Text>
-                  </View>
-              }
-              <View style={s.itemInfo}>
-                <Text style={s.itemName} numberOfLines={2}>{item.product_name}</Text>
-                <Text style={s.itemStore}>{item.store_name}</Text>
-                <Text style={s.itemPrice}>
-                  €{(item.dealTotal ?? item.price * item.quantity).toFixed(2)}
-                </Text>
-              </View>
-              <View style={s.itemRight}>
-                <View style={s.qtyRow}>
-                  <TouchableOpacity
-                    style={s.qtyBtn}
-                    onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity - 1)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={s.qtyBtnText}>−</Text>
-                  </TouchableOpacity>
-                  <Text style={s.qtyText}>{item.quantity}</Text>
-                  <TouchableOpacity
-                    style={s.qtyBtn}
-                    onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity + 1)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={s.qtyBtnText}>+</Text>
-                  </TouchableOpacity>
+            <Card style={styles.itemCard}>
+              <View style={styles.itemRow}>
+                {item.image_url
+                  ? <Image source={{ uri: item.image_url }} style={styles.itemImage} />
+                  : <View style={[styles.itemImagePlaceholder, { backgroundColor: colors.greenLight }]}>
+                      <Text style={styles.itemImageEmoji}>📦</Text>
+                    </View>
+                }
+                <View style={styles.itemInfo}>
+                  <Text style={[styles.itemName, { color: colors.textPrimary }]} numberOfLines={2}>
+                    {item.product_name}
+                  </Text>
+                  <Text style={[styles.itemStore, { color: colors.textSecondary }]}>
+                    {item.store_name}
+                  </Text>
+                  <Text style={[styles.itemPrice, { color: colors.primaryGreen }]}>
+                    €{(item.dealTotal ?? item.price * item.quantity).toFixed(2)}
+                  </Text>
                 </View>
-                <TouchableOpacity
-                  style={s.removeBtn}
-                  onPress={() => removeItem(item.barcode, item.store_name)}
-                >
-                  <Text style={s.removeBtnText}>Remove</Text>
-                </TouchableOpacity>
+                <View style={styles.itemRight}>
+                  <View style={styles.qtyRow}>
+                    <TouchableOpacity
+                      style={[styles.qtyBtn, { backgroundColor: colors.primaryGreen }]}
+                      onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity - 1)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={[styles.qtyBtnText, { color: '#FFFFFF' }]}>−</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.qtyText, { color: colors.textPrimary }]}>{item.quantity}</Text>
+                    <TouchableOpacity
+                      style={[styles.qtyBtn, { backgroundColor: colors.primaryGreen }]}
+                      onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity + 1)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={[styles.qtyBtnText, { color: '#FFFFFF' }]}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    fullWidth={false}
+                    onPress={() => removeItem(item.barcode, item.store_name)}
+                  >
+                    Remove
+                  </Button>
+                </View>
               </View>
-            </View>
+            </Card>
           )}
         />
 
-        <View style={s.totalCard}>
-          <View style={s.totalRow}>
-            <Text style={s.totalLabel}>{itemCount} item{itemCount !== 1 ? 's' : ''}</Text>
-            <Text style={s.totalAmount}>€{total.toFixed(2)}</Text>
+        <Card style={styles.totalCard}>
+          <View style={styles.totalRow}>
+            <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>
+              {itemCount} item{itemCount !== 1 ? 's' : ''}
+            </Text>
+            <Text style={[styles.totalAmount, { color: colors.primaryGreen }]}>
+              €{total.toFixed(2)}
+            </Text>
           </View>
-          <TouchableOpacity
-            style={s.clearBtn}
-            onPress={() => Alert.alert(
-              'Clear basket?',
-              'This will remove all items.',
-              [
+          <Button
+            variant="danger"
+            onPress={() => showAlert({
+              title: 'Clear basket?',
+              message: 'This will remove all items.',
+              buttons: [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Clear', style: 'destructive', onPress: clearBasket }
-              ]
-            )}
+                { text: 'Clear', style: 'destructive', onPress: clearBasket },
+              ],
+            })}
           >
-            <Text style={s.clearBtnText}>Clear Basket 🗑️</Text>
-          </TouchableOpacity>
-        </View>
+            Clear Basket 🗑️
+          </Button>
+        </Card>
       </View>
+      <AppAlert {...alertProps} />
     </SafeAreaView>
   );
 }
 
-const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
-  StyleSheet.create({
-    safe: { flex: 1, backgroundColor: c.background, paddingTop: 0 },
-    container: { flex: 1, backgroundColor: c.background },
-    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xxl },
-    emptyEmoji: { fontSize: 64, marginBottom: Spacing.lg },
-    emptyTitle: { fontSize: Typography.heading2, fontWeight: '600', color: c.textPrimary, marginBottom: Spacing.sm },
-    emptySubtitle: { fontSize: Typography.body, color: c.textSecondary, textAlign: 'center', lineHeight: 24 },
-    header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.xl, paddingBottom: Spacing.md },
-    headerIcon: { fontSize: Typography.heading2 },
-    headerTitle: { fontSize: Typography.heading2, fontWeight: '600', color: c.textPrimary },
-    itemCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, marginBottom: Spacing.sm, padding: Spacing.md, borderRadius: Radii.lg, borderWidth: 0.5, borderColor: c.border },
-    itemImage: { width: 56, height: 56, resizeMode: 'contain', borderRadius: Radii.sm, marginRight: Spacing.md },
-    itemImagePlaceholder: { width: 56, height: 56, backgroundColor: c.greenLight, borderRadius: Radii.sm, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
-    itemInfo: { flex: 1 },
-    itemName: { fontSize: Typography.heading3, fontWeight: '500', color: c.textPrimary, marginBottom: 2 },
-    itemStore: { fontSize: Typography.body, color: c.textSecondary, marginBottom: 2 },
-    itemPrice: { fontSize: Typography.heading3, fontWeight: '600', color: c.primaryGreen },
-    itemRight: { alignItems: 'flex-end', marginLeft: Spacing.sm },
-    qtyRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
-    qtyBtn: { width: 32, height: 32, backgroundColor: c.greenLight, borderRadius: Radii.full, justifyContent: 'center', alignItems: 'center' },
-    qtyBtnText: { fontSize: Typography.heading3, color: c.primaryGreen, fontWeight: '600' },
-    qtyText: { fontSize: Typography.body, fontWeight: '600', color: c.textPrimary, marginHorizontal: Spacing.sm, minWidth: 20, textAlign: 'center' },
-    removeBtn: { paddingHorizontal: Spacing.sm, paddingVertical: 4, backgroundColor: c.errorBg, borderRadius: Radii.sm },
-    removeBtnText: { fontSize: Typography.caption, color: c.error, fontWeight: '600' },
-    totalCard: { backgroundColor: c.surface, margin: Spacing.xl, padding: Spacing.xl, borderRadius: Radii.lg, borderWidth: 0.5, borderColor: c.border },
-    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
-    totalLabel: { fontSize: Typography.heading3, color: c.textSecondary },
-    totalAmount: { fontSize: 36, fontWeight: '700', color: c.primaryGreen },
-    clearBtn: { backgroundColor: c.errorBg, padding: Spacing.md, borderRadius: Radii.md, alignItems: 'center', borderWidth: 0.5, borderColor: c.errorBorder, minHeight: TouchTargets.minHeight, justifyContent: 'center' },
-    clearBtnText: { color: c.error, fontWeight: '600', fontSize: Typography.heading3 },
-  });
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  container: { flex: 1 },
+  emptyEmoji: { fontSize: 64 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.xl, paddingBottom: Spacing.md },
+  headerIcon: { fontSize: Typography.heading2 },
+  headerTitle: { fontSize: Typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
+  listContent: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
+  itemCard: { marginBottom: Spacing.sm, padding: Spacing.md },
+  itemRow: { flexDirection: 'row', alignItems: 'center' },
+  itemImage: { width: 56, height: 56, resizeMode: 'contain', borderRadius: Radii.sm, marginRight: Spacing.md },
+  itemImagePlaceholder: { width: 56, height: 56, borderRadius: Radii.sm, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
+  itemImageEmoji: { fontSize: 24 },
+  itemInfo: { flex: 1 },
+  itemName: { fontSize: Typography.heading2, fontWeight: '500', fontFamily: 'Inter', marginBottom: 2 },
+  itemStore: { fontSize: Typography.body, marginBottom: 2 },
+  itemPrice: { fontSize: Typography.heading2, fontWeight: '600', fontFamily: 'Inter' },
+  itemRight: { alignItems: 'flex-end', marginLeft: Spacing.sm, gap: Spacing.sm },
+  qtyRow: { flexDirection: 'row', alignItems: 'center' },
+  qtyBtn: { width: 32, height: 32, borderRadius: Radii.full, justifyContent: 'center', alignItems: 'center' },
+  qtyBtnText: { fontSize: Typography.heading2, fontWeight: '600' },
+  qtyText: { fontSize: Typography.heading3, fontWeight: '600', fontFamily: 'Inter', marginHorizontal: Spacing.sm, minWidth: 20, textAlign: 'center' },
+  totalCard: { margin: Spacing.lg },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
+  totalLabel: { fontSize: Typography.heading3 },
+  totalAmount: { fontSize: 36, fontWeight: '700', fontFamily: 'Inter' },
+});

@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { useAlert } from '@/hooks/useAlert';
 import { useAuth } from '@/hooks/useAuth';
 import { useBasket } from '@/hooks/useBasket';
 import { useNetwork } from '@/hooks/useNetwork';
@@ -32,7 +33,6 @@ import { fetchProduct } from '@/services/productService';
 import { PriceEntry, PriceSubmission, Product } from '@/types/index';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 
 type PendingSubmission = PriceSubmission & { id: string };
 
@@ -54,6 +54,7 @@ export function usePrices() {
   const { addItem, basket } = useBasket();
   const { isOnline } = useNetwork();
   const { isGuest } = useAuth();
+  const { showAlert, alertProps } = useAlert();
   const {
     getCachedProduct,
     cacheProduct,
@@ -192,11 +193,11 @@ export function usePrices() {
 
   const handleSubmitPrice = () => {
     if (isGuest) {
-      Alert.alert(
-        '👋 Sign in to contribute',
-        'Guest users can view prices but signing in lets you submit prices and help the community.',
-        [{ text: 'OK' }]
-      );
+      showAlert({
+        title: '👋 Sign in to contribute',
+        message: 'Guest users can view prices but signing in lets you submit prices and help the community.',
+        buttons: [{ text: 'OK' }],
+      });
       return;
     }
 
@@ -225,14 +226,14 @@ export function usePrices() {
     if (priceEntries.length > 2) {
       const avg = priceEntries.reduce((sum, e) => sum + e.price, 0) / priceEntries.length;
       if (parsedPrice > avg * 3 || parsedPrice < avg / 3) {
-        Alert.alert(
-          '⚠️ Unusual price',
-          `The average price for this product is €${avg.toFixed(2)}. You entered €${parsedPrice.toFixed(2)}.\n\nAre you sure this is correct?`,
-          [
+        showAlert({
+          title: '⚠️ Unusual price',
+          message: `The average price for this product is €${avg.toFixed(2)}. You entered €${parsedPrice.toFixed(2)}.\n\nAre you sure this is correct?`,
+          buttons: [
             { text: 'Yes, submit anyway', onPress: () => proceedWithSubmit(parsedPrice) },
             { text: 'Let me check', style: 'cancel' },
-          ]
-        );
+          ],
+        });
         return;
       }
     }
@@ -254,17 +255,17 @@ export function usePrices() {
           prev.map(e => e.id === entryId ? { ...e, confirms: entry.confirms + 1 } : e)
         )
       );
-      Alert.alert('👍 Thanks!', 'You confirmed this price is correct.');
+      showAlert({ title: '👍 Thanks!', message: 'You confirmed this price is correct.', buttons: [{ text: 'OK' }] });
     } catch {
-      Alert.alert('Error', 'Could not confirm price. Please try again.');
+      showAlert({ title: 'Error', message: 'Could not confirm price. Please try again.', buttons: [{ text: 'OK' }] });
     }
   };
 
   const handleFlagPrice = (entryId: number) => {
-    Alert.alert(
-      '🚩 Flag this price',
-      'Is this price incorrect or suspicious?',
-      [
+    showAlert({
+      title: '🚩 Flag this price',
+      message: 'Is this price incorrect or suspicious?',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Yes, flag it',
@@ -277,7 +278,7 @@ export function usePrices() {
               const { hidden } = await flagPrice(entryId, entry.flags);
               if (hidden) {
                 setPriceEntries(prev => prev.filter(e => e.id !== entryId));
-                Alert.alert('✅ Reported', 'This price has been hidden pending review. Thank you!');
+                showAlert({ title: '✅ Reported', message: 'This price has been hidden pending review. Thank you!', buttons: [{ text: 'OK' }] });
               } else {
                 // Bug #7: re-sort after flags changes the ordering
                 setPriceEntries(prev =>
@@ -285,15 +286,15 @@ export function usePrices() {
                     prev.map(e => e.id === entryId ? { ...e, flags: entry.flags + 1 } : e)
                   )
                 );
-                Alert.alert('✅ Reported', 'Thank you for helping keep our data accurate!');
+                showAlert({ title: '✅ Reported', message: 'Thank you for helping keep our data accurate!', buttons: [{ text: 'OK' }] });
               }
             } catch {
-              Alert.alert('Error', 'Could not flag price. Please try again.');
+              showAlert({ title: 'Error', message: 'Could not flag price. Please try again.', buttons: [{ text: 'OK' }] });
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   // ─── AI price tag scan ─────────────────────────────────────────────────────
@@ -301,7 +302,7 @@ export function usePrices() {
   const handleScanPriceTag = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Please allow camera access to scan price tags.');
+      showAlert({ title: 'Permission needed', message: 'Please allow camera access to scan price tags.', buttons: [{ text: 'OK' }] });
       return;
     }
 
@@ -326,34 +327,38 @@ export function usePrices() {
         message += `\n\nDoes this look right? You can correct it before submitting.`;
       }
 
-      Alert.alert('💰 Price detected!', message, [
-        { text: 'Use single price', style: 'default' },
-        priceData.deal_price_per_item
-          ? {
-              text: `Use deal price (€${priceData.deal_price_per_item.toFixed(2)})`,
-              onPress: () => {
-                const { quantity, totalPrice } = extractDealInfo(
-                  priceData.deal || '',
-                  priceData.deal_price_per_item!,
-                  priceData.single_price
-                );
-                const safeQuantity = Math.min(quantity, 20); // Bug #16: cap AI-returned quantity
-                setPrice(String(priceData.deal_price_per_item!.toFixed(2)));
-                setDealQuantity(safeQuantity);
-                setDealTotal(totalPrice);
-                if (safeQuantity > 1) {
-                  Alert.alert(
-                    '🛒 Deal quantity set!',
-                    `Quantity set to ${safeQuantity}.\nBasket total will show exactly €${totalPrice.toFixed(2)}`,
-                    [{ text: 'Perfect!', style: 'default' }]
+      showAlert({
+        title: '💰 Price detected!',
+        message,
+        buttons: [
+          { text: 'Use single price' },
+          priceData.deal_price_per_item
+            ? {
+                text: `Use deal price (€${priceData.deal_price_per_item.toFixed(2)})`,
+                onPress: () => {
+                  const { quantity, totalPrice } = extractDealInfo(
+                    priceData.deal || '',
+                    priceData.deal_price_per_item!,
+                    priceData.single_price
                   );
-                }
-              },
-            }
-          : { text: 'OK', style: 'default' },
-      ]);
+                  const safeQuantity = Math.min(quantity, 20); // Bug #16: cap AI-returned quantity
+                  setPrice(String(priceData.deal_price_per_item!.toFixed(2)));
+                  setDealQuantity(safeQuantity);
+                  setDealTotal(totalPrice);
+                  if (safeQuantity > 1) {
+                    showAlert({
+                      title: '🛒 Deal quantity set!',
+                      message: `Quantity set to ${safeQuantity}.\nBasket total will show exactly €${totalPrice.toFixed(2)}`,
+                      buttons: [{ text: 'Perfect!' }],
+                    });
+                  }
+                },
+              }
+            : { text: 'OK' },
+        ],
+      });
     } catch (e: any) {
-      Alert.alert('Could not read price', e.message || 'Please try again or enter manually.');
+      showAlert({ title: 'Could not read price', message: e.message || 'Please try again or enter manually.', buttons: [{ text: 'OK' }] });
     } finally {
       setAiLoading(false);
     }
@@ -368,7 +373,7 @@ export function usePrices() {
       item => item.barcode === product.barcode && item.store_name === entry.store_name
     );
     if (alreadyInBasket) {
-      Alert.alert('Already in basket', 'This item from this store is already in your basket.');
+      showAlert({ title: 'Already in basket', message: 'This item from this store is already in your basket.', buttons: [{ text: 'OK' }] });
       return;
     }
 
@@ -386,7 +391,7 @@ export function usePrices() {
       ? `${product.product_name} × ${dealQuantity} added (deal quantity)`
       : `${product.product_name} added to your basket.`;
 
-    Alert.alert('Added! 🛒', msg);
+    showAlert({ title: 'Added! 🛒', message: msg, buttons: [{ text: 'OK' }] });
     setDealQuantity(1);
   };
 
@@ -431,5 +436,7 @@ export function usePrices() {
     handleAddToBasket,
     handlePriceChange,
     resetScan,
+    // Alert props — spread onto <AppAlert> in the consuming screen
+    alertProps,
   };
 }

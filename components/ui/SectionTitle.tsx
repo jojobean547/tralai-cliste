@@ -16,10 +16,31 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-export const STORES: string[] = [
-  'Aldi',
-  'Dunnes Stores',
-  'Lidl',
-  'SuperValu',
-  'Tesco',
-];
+import React from 'react';
+import { StyleSheet, Text, TextStyle } from 'react-native';
+import { Spacing, Typography } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
+
+interface SectionTitleProps {
+  children: React.ReactNode;
+  style?: TextStyle;
+}
+
+export function SectionTitle({ children, style }: SectionTitleProps) {
+  const { colors } = useTheme();
+
+  return (
+    <Text style={[styles.title, { color: colors.textPrimary }, style]}>
+      {children}
+    </Text>
+  );
+}
+
+const styles = StyleSheet.create({
+  title: {
+    fontFamily: 'Inter',
+    fontSize: Typography.heading2,
+    fontWeight: Typography.semibold,
+    marginBottom: Spacing.md,
+  },
+});

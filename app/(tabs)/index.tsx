@@ -19,15 +19,17 @@
 import OfflineBanner from '@/components/OfflineBanner';
 import PriceList from '@/components/PriceList';
 import ProductCard from '@/components/ProductCard';
-import { Radii, Spacing, TouchTargets, Typography } from '@/constants/theme';
+import { AppAlert } from '@/components/ui/AppAlert';
+import { Button } from '@/components/ui/Button';
+import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useNetwork } from '@/hooks/useNetwork';
 import { usePrices } from '@/hooks/usePrices';
 import { useTheme } from '@/hooks/useTheme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import {
-  ActivityIndicator, Button, Image, KeyboardAvoidingView,
-  Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  ActivityIndicator, Image, KeyboardAvoidingView,
+  Platform, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -41,31 +43,34 @@ export default function HomeScreen() {
     submitted, saving, aiLoading, error, loading,
     lookUpProduct, handleSubmitPrice, handleConfirmPrice, handleFlagPrice,
     handleScanPriceTag, handleAddToBasket, handlePriceChange, resetScan,
+    alertProps,
   } = usePrices();
 
-  const s = styles(colors);
-
-  if (!permission) return <View style={s.safe} />;
+  if (!permission) return <View style={[styles.safe, { backgroundColor: colors.background }]} />;
 
   if (!permission.granted) {
     return (
-      <SafeAreaView style={s.safe}>
-        <View style={s.centred}>
-          <Text style={s.message}>We need camera permission to scan barcodes</Text>
-          <Button title="Grant Permission" onPress={requestPermission} />
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View style={styles.centred}>
+          <Text style={[styles.message, { color: colors.textSecondary }]}>
+            We need camera permission to scan barcodes
+          </Text>
+          <Button variant="primary" onPress={requestPermission}>
+            Grant Permission
+          </Button>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={s.container}>
+        <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
 
           {scanning && (
             <CameraView
-              style={s.camera}
+              style={styles.camera}
               onBarcodeScanned={({ data }) => { setScanning(false); lookUpProduct(data); }}
               barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8'] }}
             />
@@ -74,17 +79,20 @@ export default function HomeScreen() {
           {!scanning && (
             <>
               {/* Header */}
-              <View style={s.header}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={styles.header}>
+                <View style={styles.headerLeft}>
                   <Image
                     source={require('@/assets/images/tralai_cliste_app_logo_outline_no_bg.png')}
-                    style={{ width: 45, height: 45, borderRadius: 8 }}
-                    //resizeMode="contain"
+                    style={styles.logoImage}
                   />
-                  <Text style={s.title}>Tralaí Cliste</Text>
+                  <Text style={[styles.title, { color: colors.textPrimary }]}>Tralaí Cliste</Text>
                 </View>
-                <View style={[s.onlinePill, !isOnline && s.offlinePill]}>
-                  <Text style={[s.onlinePillText, !isOnline && s.offlinePillText]}>
+                <View style={[
+                  styles.onlinePill,
+                  { backgroundColor: isOnline ? colors.primaryGreen : colors.errorBg,
+                    borderColor: isOnline ? colors.primaryGreen : colors.error },
+                ]}>
+                  <Text style={[styles.onlinePillText, { color: isOnline ? '#FFFFFF' : colors.error }]}>
                     {isOnline ? '● Online' : '● Offline'}
                   </Text>
                 </View>
@@ -94,45 +102,24 @@ export default function HomeScreen() {
 
               {/* Scan area when no product */}
               {!product && !loading && (
-                <View style={s.scanArea}>
-                  <Text style={s.scanIcon}>⬚</Text>
-                  <Text style={s.scanText}>Point camera at barcode or price tag</Text>
+                <View style={[styles.scanArea, { backgroundColor: colors.surfaceAlt, borderColor: colors.primaryGreen }]}>
+                  <Text style={styles.scanIcon}>⬚</Text>
+                  <Text style={[styles.scanText, { color: colors.textSecondary }]}>
+                    Point camera at barcode or price tag
+                  </Text>
                 </View>
               )}
 
               {loading && (
-                <View style={s.loadingRow}>
+                <View style={styles.loadingRow}>
                   <ActivityIndicator size="large" color={colors.primaryGreen} />
-                  <Text style={s.message}>Looking up product...</Text>
+                  <Text style={[styles.message, { color: colors.textSecondary }]}>Looking up product...</Text>
                 </View>
               )}
 
               {!!error && (
-                <View style={s.errorBox}>
-                  <Text style={s.error}>{error}</Text>
-                </View>
-              )}
-
-              <PriceList
-                entries={priceEntries}
-                onConfirm={handleConfirmPrice}
-                onFlag={handleFlagPrice}
-                onAddToBasket={handleAddToBasket}
-              />
-
-              {priceEntries.length === 0 && !!product && !loading && (
-                <View style={s.noPricesBox}>
-                  <Text style={s.noPricesText}>
-                    📭 No prices yet for this product — be the first!
-                  </Text>
-                </View>
-              )}
-
-              {submitted && (
-                <View style={s.successBox}>
-                  <Text style={s.successText}>
-                    ✅ Price saved! Thank you for helping the community!
-                  </Text>
+                <View style={[styles.errorBox, { backgroundColor: colors.errorBg, borderColor: colors.errorBorder }]}>
+                  <Text style={[styles.error, { color: colors.error }]}>{error}</Text>
                 </View>
               )}
 
@@ -150,47 +137,67 @@ export default function HomeScreen() {
                 />
               )}
 
-              <TouchableOpacity
-                style={s.scanBtnContainer}
+              {priceEntries.length === 0 && !!product && !loading && (
+                <View style={[styles.noPricesBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderStrong }]}>
+                  <Text style={[styles.noPricesText, { color: colors.primaryGreen }]}>
+                    📭 No prices yet for this product — be the first!
+                  </Text>
+                </View>
+              )}
+
+              {submitted && (
+                <View style={[styles.successBox, { backgroundColor: colors.infoBg, borderColor: colors.success }]}>
+                  <Text style={[styles.successText, { color: colors.success }]}>
+                    ✅ Price saved! Thank you for helping the community!
+                  </Text>
+                </View>
+              )}
+
+              <PriceList
+                entries={priceEntries}
+                onConfirm={handleConfirmPrice}
+                onFlag={handleFlagPrice}
+                onAddToBasket={handleAddToBasket}
+              />
+
+              <Button
+                variant="primary"
                 onPress={() => { resetScan(); setScanning(true); }}
-                activeOpacity={0.85}
+                style={styles.scanBtnSpacing}
               >
-                <Text style={s.scanBtnText}>
-                  {product ? 'Scan Another Product' : 'Scan a Product'}
-                </Text>
-              </TouchableOpacity>
+                {product ? 'Scan Another Product' : 'Scan a Product'}
+              </Button>
             </>
           )}
 
         </ScrollView>
       </KeyboardAvoidingView>
+      <AppAlert {...alertProps} />
     </SafeAreaView>
   );
 }
 
-const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
-  StyleSheet.create({
-    safe: { flex: 1, backgroundColor: c.background },
-    container: { flexGrow: 1, padding: Spacing.xl, backgroundColor: c.background },
-    centred: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl },
-    camera: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, height: 600 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
-    title: { fontSize: Typography.heading2, fontWeight: '700', color: c.textPrimary },
-    onlinePill: { backgroundColor: c.greenLight, paddingHorizontal: Spacing.md, paddingVertical: 4, borderRadius: Radii.pill, borderWidth: 0.5, borderColor: c.primaryGreen },
-    offlinePill: { backgroundColor: c.errorBg, borderColor: c.error },
-    onlinePillText: { fontSize: Typography.tiny, color: c.primaryGreen, fontWeight: '600' },
-    offlinePillText: { color: c.error },
-    scanArea: { backgroundColor: c.surfaceAlt, borderWidth: 1.5, borderColor: c.primaryGreen, borderStyle: 'dashed', borderRadius: Radii.lg, padding: Spacing.xxl, alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.lg, minHeight: 160, justifyContent: 'center' },
-    scanIcon: { fontSize: 40, color: c.primaryGreen },
-    scanText: { fontSize: Typography.body, color: c.textSecondary, textAlign: 'center' },
-    loadingRow: { alignItems: 'center', gap: Spacing.md, marginVertical: Spacing.xl },
-    message: { fontSize: Typography.body, color: c.textSecondary, textAlign: 'center' },
-    errorBox: { backgroundColor: c.errorBg, padding: Spacing.md, borderRadius: Radii.sm, marginBottom: Spacing.md, borderWidth: 0.5, borderColor: c.errorBorder },
-    error: { fontSize: Typography.bodySmall, color: c.error, textAlign: 'center' },
-    noPricesBox: { backgroundColor: c.surfaceAlt, padding: Spacing.md, borderRadius: Radii.md, marginBottom: Spacing.md, borderWidth: 0.5, borderColor: c.borderStrong },
-    noPricesText: { color: c.primaryGreen, fontSize: Typography.bodySmall, textAlign: 'center' },
-    successBox: { backgroundColor: c.infoBg, padding: Spacing.lg, borderRadius: Radii.md, marginBottom: Spacing.xl, borderWidth: 0.5, borderColor: c.success },
-    successText: { color: c.success, fontSize: Typography.body, textAlign: 'center' },
-    scanBtnContainer: { width: '100%', marginTop: Spacing.sm, minHeight: TouchTargets.minHeight, backgroundColor: c.primaryGreen, borderRadius: Radii.md, alignItems: 'center', justifyContent: 'center' },
-    scanBtnText: { color: '#FFFFFF', fontSize: Typography.body, fontWeight: '600', textTransform: 'none' },
-  });
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  container: { flexGrow: 1, padding: Spacing.xl },
+  centred: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl, gap: Spacing.lg },
+  camera: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, height: 600 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoImage: { width: 92, height: 92, borderRadius: 2 },
+  title: { fontSize: Typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
+  onlinePill: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: Radii.pill, borderWidth: 1 },
+  onlinePillText: { fontSize: Typography.bodySmall, fontWeight: '600' },
+  scanArea: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: Radii.lg, padding: Spacing.xxl, alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.lg, minHeight: 160, justifyContent: 'center' },
+  scanIcon: { fontSize: 40 },
+  scanText: { fontSize: Typography.body, textAlign: 'center' },
+  loadingRow: { alignItems: 'center', gap: Spacing.md, marginVertical: Spacing.xl },
+  message: { fontSize: Typography.body, textAlign: 'center' },
+  errorBox: { padding: Spacing.md, borderRadius: Radii.sm, marginBottom: Spacing.md, borderWidth: 1 },
+  error: { fontSize: Typography.bodySmall, textAlign: 'center' },
+  noPricesBox: { padding: Spacing.md, borderRadius: Radii.md, marginBottom: Spacing.md, borderWidth: 1 },
+  noPricesText: { fontSize: Typography.bodySmall, textAlign: 'center' },
+  successBox: { padding: Spacing.lg, borderRadius: Radii.md, marginBottom: Spacing.xl, borderWidth: 1 },
+  successText: { fontSize: Typography.body, textAlign: 'center' },
+  scanBtnSpacing: { marginTop: Spacing.sm },
+});

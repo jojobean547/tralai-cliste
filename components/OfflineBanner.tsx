@@ -26,16 +26,13 @@ export default function OfflineBanner({ isOnline }: Props) {
   const { colors } = useTheme();
   if (isOnline) return null;
   return (
-    <View style={styles(colors).banner}>
-      <Text style={styles(colors).text}>
-        📡 You're offline — showing cached data
-      </Text>
+    <View style={[styles.banner, { backgroundColor: colors.accentGold }]}>
+      <Text style={styles.text}>📡 You're offline — showing cached data</Text>
     </View>
   );
 }
 
-const styles = (c: ReturnType<typeof import('@/hooks/useTheme').useTheme>['colors']) =>
-  StyleSheet.create({
-    banner: { backgroundColor: c.accentGold, padding: Spacing.sm, borderRadius: Radii.sm, width: '100%', marginBottom: Spacing.md },
-    text: { color: '#1A1C1E', textAlign: 'center', fontSize: Typography.bodySmall, fontWeight: '600' },
-  });
+const styles = StyleSheet.create({
+  banner: { padding: Spacing.sm, borderRadius: Radii.sm, width: '100%', marginBottom: Spacing.md },
+  text: { color: '#1A1C1E', textAlign: 'center', fontSize: Typography.bodySmall, fontWeight: '600', fontFamily: 'Inter' },
+});

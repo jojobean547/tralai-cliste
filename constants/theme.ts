@@ -97,14 +97,14 @@ export const Colors = {
 } as const;
 
 export const Typography = {
-  // Font sizes — large for elderly users
-  heading1:  28,
-  heading2:  22,
-  heading3:  18,
-  body:      16,
-  bodySmall: 14,
-  caption:   12,
-  tiny:      11,
+  // Font sizes — large for elderly/far-sighted users
+  heading1:  38,
+  heading2:  28,
+  heading3:  22,
+  body:      18,
+  bodySmall: 16,
+  caption:   14,
+  tiny:      12,
 
   // Font weights
   regular:   '400' as const,
