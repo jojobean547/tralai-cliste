@@ -56,7 +56,7 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
             <View style={styles.mainRow}>
               {/* Left: StoreBadge */}
               <View style={styles.leftCol}>
-                <StoreBadge store={entry.store_name} size="md" />
+                <StoreBadge store={entry.store_name} size="md" style={styles.storeBadge} />
               </View>
 
               {/* Right: price + Add button, then Best Price label */}
@@ -66,12 +66,13 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
                     €{entry.price.toFixed(2)}
                   </Text>
                   <Button
-                    variant="primary"
+                    variant="ghost"
                     size="sm"
                     fullWidth={false}
                     onPress={() => onAddToBasket(entry)}
+                    style={{ backgroundColor: colors.greenTintBg, borderWidth: 1.5, borderColor: colors.greenTintText }}
                   >
-                    Add
+                    <Text style={[styles.addLabel, { color: colors.greenTintText }]}>Add</Text>
                   </Button>
                 </View>
                 {isCheapest && (
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     marginBottom: Spacing.sm,
   },
-  card: { marginBottom: Spacing.sm },
+  card: { marginBottom: Spacing.sm, padding: Spacing.md },
 
   // Rows 1 & 2
   mainRow: {
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
   priceAddRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   price: {
     fontSize: Typography.heading1,
@@ -156,13 +157,15 @@ const styles = StyleSheet.create({
     fontSize: Typography.body,
     fontFamily: 'Inter',
   },
+  storeBadge: { paddingVertical: 2 },
   voteBtn: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.xs,
   },
   ageText: {
     fontSize: Typography.body,
     fontFamily: 'Inter',
     marginLeft: 'auto',
   },
+  addLabel: { fontSize: Typography.bodySmall, fontWeight: '700', fontFamily: 'Inter' },
 });

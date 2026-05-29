@@ -69,8 +69,15 @@ export default function ProductCard({
       />
 
       <View style={styles.buttonSpacing}>
-        <Button variant="purple" onPress={onScanTag} loading={aiLoading}>
-          {!aiLoading ? '📷  Scan Price Tag Instead' : 'AI reading price...'}
+        <Button
+          variant="ghost"
+          onPress={onScanTag}
+          loading={aiLoading}
+          style={{ borderWidth: 2, borderColor: colors.accentPurple }}
+        >
+          <Text style={[styles.outlineLabel, { color: colors.accentPurple }]}>
+            {!aiLoading ? '📷  Scan Price Tag Instead' : 'AI reading price...'}
+          </Text>
         </Button>
       </View>
 
@@ -80,8 +87,15 @@ export default function ProductCard({
         onSelect={onStoreSelect}
       />
 
-      <Button variant="primary" onPress={onSubmit} loading={saving}>
-        Submit Price 💾
+      <Button
+        variant="ghost"
+        onPress={onSubmit}
+        loading={saving}
+        style={{ borderWidth: 2, borderColor: colors.buttonPrimary }}
+      >
+        <Text style={[styles.outlineLabel, { color: colors.buttonPrimary }]}>
+          Submit Price 💾
+        </Text>
       </Button>
     </Card>
   );
@@ -96,4 +110,5 @@ const styles = StyleSheet.create({
   label: { fontSize: Typography.body, fontWeight: '500', marginBottom: Spacing.sm, marginTop: Spacing.md },
   input: { borderWidth: 1, borderRadius: Radii.sm, padding: Spacing.md, fontSize: Typography.heading2, width: '100%', marginBottom: Spacing.sm, minHeight: TouchTargets.minHeight },
   buttonSpacing: { marginBottom: Spacing.xs },
+  outlineLabel: { fontSize: Typography.body, fontWeight: '700', fontFamily: 'Inter' },
 });

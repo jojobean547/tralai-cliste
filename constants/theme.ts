@@ -49,6 +49,13 @@ export const Colors = {
     info:          '#2F9E44',
     infoBg:        '#E8F5E9',
 
+    // Buttons
+    buttonPrimary:     '#0B5D3B',
+    buttonPrimaryText: '#FFFFFF',
+    buttonSecondary:   '#2E7D32',
+    greenTintBg:       '#DCEFDE',
+    greenTintText:     '#2E7D32',
+
     // Tab
     tabActive:     '#0B5D3B',
     tabInactive:   '#6B7280',
@@ -72,12 +79,12 @@ export const Colors = {
     textInverse:   '#FFFFFF',
 
     // Brand
-    primaryGreen:  '#0B5D3B',
+    primaryGreen:  '#178241',
     greenLight:    '#1F7A4D',
     greenMid:      '#1F7A4D',
 
     // Accents
-    accentPurple:  '#5C3DBA',
+    accentPurple:  '#7954EB',
     accentGold:    '#F2B705',
 
     // Status
@@ -87,6 +94,13 @@ export const Colors = {
     errorBorder:   '#3D1F1F',
     info:          '#1F7A4D',
     infoBg:        '#0F1A12',
+
+    // Buttons
+    buttonPrimary:     '#178241',
+    buttonPrimaryText: '#FFFFFF',
+    greenTintBg:       '#162E22',
+    greenTintText:     '#178241',
+    buttonSecondary:   '#4CAF50',
 
     // Tab
     tabActive:     '#1F7A4D',

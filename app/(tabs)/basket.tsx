@@ -53,16 +53,21 @@ export default function BasketScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={styles.container}>
+      <View style={styles.outer}>
+
+        {/* Fixed header */}
         <View style={styles.header}>
           <Text style={styles.headerIcon}>🛒</Text>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>My Basket</Text>
         </View>
 
+        {/* Scrollable item list */}
         <FlatList
           data={basket}
           keyExtractor={item => `${item.barcode}-${item.store_name}`}
+          style={styles.list}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <Card style={styles.itemCard}>
               <View style={styles.itemRow}>
@@ -86,19 +91,19 @@ export default function BasketScreen() {
                 <View style={styles.itemRight}>
                   <View style={styles.qtyRow}>
                     <TouchableOpacity
-                      style={[styles.qtyBtn, { backgroundColor: colors.primaryGreen }]}
+                      style={[styles.qtyBtn, { backgroundColor: colors.greenTintBg, borderWidth: 1.5, borderColor: colors.greenTintText }]}
                       onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity - 1)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Text style={[styles.qtyBtnText, { color: '#FFFFFF' }]}>−</Text>
+                      <Text style={[styles.qtyBtnText, { color: colors.greenTintText }]}>−</Text>
                     </TouchableOpacity>
                     <Text style={[styles.qtyText, { color: colors.textPrimary }]}>{item.quantity}</Text>
                     <TouchableOpacity
-                      style={[styles.qtyBtn, { backgroundColor: colors.primaryGreen }]}
+                      style={[styles.qtyBtn, { backgroundColor: colors.greenTintBg, borderWidth: 1.5, borderColor: colors.greenTintText }]}
                       onPress={() => updateQuantity(item.barcode, item.store_name, item.quantity + 1)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Text style={[styles.qtyBtnText, { color: '#FFFFFF' }]}>+</Text>
+                      <Text style={[styles.qtyBtnText, { color: colors.greenTintText }]}>+</Text>
                     </TouchableOpacity>
                   </View>
                   <Button
@@ -115,7 +120,8 @@ export default function BasketScreen() {
           )}
         />
 
-        <Card style={styles.totalCard}>
+        {/* Fixed footer */}
+        <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.surface }]}>
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>
               {itemCount} item{itemCount !== 1 ? 's' : ''}
@@ -137,7 +143,8 @@ export default function BasketScreen() {
           >
             Clear Basket 🗑️
           </Button>
-        </Card>
+        </View>
+
       </View>
       <AppAlert {...alertProps} />
     </SafeAreaView>
@@ -146,12 +153,13 @@ export default function BasketScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  container: { flex: 1 },
+  outer: { flex: 1 },
   emptyEmoji: { fontSize: 64 },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.xl, paddingBottom: Spacing.md },
   headerIcon: { fontSize: Typography.heading2 },
   headerTitle: { fontSize: Typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
-  listContent: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
+  list: { flex: 1 },
+  listContent: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl },
   itemCard: { marginBottom: Spacing.sm, padding: Spacing.md },
   itemRow: { flexDirection: 'row', alignItems: 'center' },
   itemImage: { width: 56, height: 56, resizeMode: 'contain', borderRadius: Radii.sm, marginRight: Spacing.md },
@@ -166,7 +174,7 @@ const styles = StyleSheet.create({
   qtyBtn: { width: 32, height: 32, borderRadius: Radii.full, justifyContent: 'center', alignItems: 'center' },
   qtyBtnText: { fontSize: Typography.heading2, fontWeight: '600' },
   qtyText: { fontSize: Typography.heading3, fontWeight: '600', fontFamily: 'Inter', marginHorizontal: Spacing.sm, minWidth: 20, textAlign: 'center' },
-  totalCard: { margin: Spacing.lg },
+  footer: { borderTopWidth: 0.5, padding: Spacing.xl },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
   totalLabel: { fontSize: Typography.heading3 },
   totalAmount: { fontSize: 36, fontWeight: '700', fontFamily: 'Inter' },

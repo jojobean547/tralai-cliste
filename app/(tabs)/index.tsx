@@ -65,42 +65,42 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
+      {scanning && (
+        <CameraView
+          style={StyleSheet.absoluteFill}
+          onBarcodeScanned={({ data }) => { setScanning(false); lookUpProduct(data); }}
+          barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8'] }}
+        />
+      )}
 
-          {scanning && (
-            <CameraView
-              style={styles.camera}
-              onBarcodeScanned={({ data }) => { setScanning(false); lookUpProduct(data); }}
-              barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8'] }}
-            />
-          )}
+      {!scanning && (
+        <>
+          {/* Fixed header */}
+          <View style={[styles.header, { backgroundColor: colors.background }]}>
+            <View style={styles.headerLeft}>
+              <Image
+                source={require('@/assets/images/tralai_cliste_app_logo_outline_no_bg.png')}
+                style={styles.logoImage}
+              />
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Tralaí Cliste</Text>
+            </View>
+            <View style={[
+              styles.onlinePill,
+              { backgroundColor: isOnline ? colors.greenTintBg : colors.errorBg,
+                borderColor: isOnline ? colors.greenTintText : colors.error },
+            ]}>
+              <Text style={[styles.onlinePillText, { color: isOnline ? colors.greenTintText : colors.error }]}>
+                {isOnline ? '● Online' : '● Offline'}
+              </Text>
+            </View>
+          </View>
 
-          {!scanning && (
-            <>
-              {/* Header */}
-              <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                  <Image
-                    source={require('@/assets/images/tralai_cliste_app_logo_outline_no_bg.png')}
-                    style={styles.logoImage}
-                  />
-                  <Text style={[styles.title, { color: colors.textPrimary }]}>Tralaí Cliste</Text>
-                </View>
-                <View style={[
-                  styles.onlinePill,
-                  { backgroundColor: isOnline ? colors.primaryGreen : colors.errorBg,
-                    borderColor: isOnline ? colors.primaryGreen : colors.error },
-                ]}>
-                  <Text style={[styles.onlinePillText, { color: isOnline ? '#FFFFFF' : colors.error }]}>
-                    {isOnline ? '● Online' : '● Offline'}
-                  </Text>
-                </View>
-              </View>
+          {/* Scrollable middle section */}
+          <KeyboardAvoidingView style={styles.scrollWrapper} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]}>
 
               <OfflineBanner isOnline={isOnline} />
 
-              {/* Scan area when no product */}
               {!product && !loading && (
                 <View style={[styles.scanArea, { backgroundColor: colors.surfaceAlt, borderColor: colors.primaryGreen }]}>
                   <Text style={styles.scanIcon}>⬚</Text>
@@ -137,14 +137,6 @@ export default function HomeScreen() {
                 />
               )}
 
-              {priceEntries.length === 0 && !!product && !loading && (
-                <View style={[styles.noPricesBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderStrong }]}>
-                  <Text style={[styles.noPricesText, { color: colors.primaryGreen }]}>
-                    📭 No prices yet for this product — be the first!
-                  </Text>
-                </View>
-              )}
-
               {submitted && (
                 <View style={[styles.successBox, { backgroundColor: colors.infoBg, borderColor: colors.success }]}>
                   <Text style={[styles.successText, { color: colors.success }]}>
@@ -160,18 +152,29 @@ export default function HomeScreen() {
                 onAddToBasket={handleAddToBasket}
               />
 
-              <Button
-                variant="primary"
-                onPress={() => { resetScan(); setScanning(true); }}
-                style={styles.scanBtnSpacing}
-              >
-                {product ? 'Scan Another Product' : 'Scan a Product'}
-              </Button>
-            </>
-          )}
+              {priceEntries.length === 0 && !!product && !loading && (
+                <View style={[styles.noPricesBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderStrong }]}>
+                  <Text style={[styles.noPricesText, { color: colors.primaryGreen }]}>
+                    📭 No prices yet for this product — be the first!
+                  </Text>
+                </View>
+              )}
 
-        </ScrollView>
-      </KeyboardAvoidingView>
+              <Button
+                variant="ghost"
+                onPress={() => { resetScan(); setScanning(true); }}
+                style={[styles.scanBtnSpacing, { borderWidth: 2, borderColor: colors.buttonSecondary }]}
+              >
+                <Text style={[styles.scanBtnLabel, { color: colors.buttonSecondary }]}>
+                  {product ? 'Scan Another Product' : 'Scan a Product'}
+                </Text>
+              </Button>
+
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </>
+      )}
+
       <AppAlert {...alertProps} />
     </SafeAreaView>
   );
@@ -179,15 +182,15 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  container: { flexGrow: 1, padding: Spacing.xl },
   centred: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl, gap: Spacing.lg },
-  camera: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, height: 600 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   logoImage: { width: 92, height: 92, borderRadius: 2 },
   title: { fontSize: Typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
   onlinePill: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: Radii.pill, borderWidth: 1 },
   onlinePillText: { fontSize: Typography.bodySmall, fontWeight: '600' },
+  scrollWrapper: { flex: 1 },
+  scrollContent: { flexGrow: 1, padding: Spacing.xl },
   scanArea: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: Radii.lg, padding: Spacing.xxl, alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.lg, minHeight: 160, justifyContent: 'center' },
   scanIcon: { fontSize: 40 },
   scanText: { fontSize: Typography.body, textAlign: 'center' },
@@ -200,4 +203,5 @@ const styles = StyleSheet.create({
   successBox: { padding: Spacing.lg, borderRadius: Radii.md, marginBottom: Spacing.xl, borderWidth: 1 },
   successText: { fontSize: Typography.body, textAlign: 'center' },
   scanBtnSpacing: { marginTop: Spacing.sm },
+  scanBtnLabel: { fontSize: Typography.body, fontWeight: '700', fontFamily: 'Inter' },
 });

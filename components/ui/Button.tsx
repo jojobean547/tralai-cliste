@@ -66,7 +66,7 @@ export function Button({
   const { colors } = useTheme();
 
   const variantStyles: Record<Variant, { bg: string; text: string; border?: string }> = {
-    primary:   { bg: colors.primaryGreen,  text: colors.textInverse },
+    primary:   { bg: colors.buttonPrimary,  text: colors.buttonPrimaryText },
     secondary: { bg: colors.surface,       text: colors.textPrimary,   border: colors.border },
     danger:    { bg: colors.errorBg,       text: colors.error,         border: colors.errorBorder },
     purple:    { bg: colors.accentPurple,  text: colors.textInverse },

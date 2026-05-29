@@ -26,6 +26,7 @@ type Size = 'sm' | 'md';
 interface StoreBadgeProps {
   store: string;
   size?: Size;
+  style?: import('react-native').ViewStyle;
 }
 
 type BadgeColour = { bg: string; text: string };
@@ -46,13 +47,13 @@ const DARK_COLOURS: Record<string, BadgeColour> = {
   'Dunnes Stores': { bg: '#4D0000', text: '#FF8080' },
 };
 
-export function StoreBadge({ store, size = 'md' }: StoreBadgeProps) {
+export function StoreBadge({ store, size = 'md', style }: StoreBadgeProps) {
   const { colors, isDark } = useTheme();
   const palette = isDark ? DARK_COLOURS : LIGHT_COLOURS;
   const { bg, text } = palette[store] ?? { bg: colors.greenLight, text: colors.primaryGreen };
 
   return (
-    <View style={[styles.pill, { backgroundColor: bg }]}>
+    <View style={[styles.pill, { backgroundColor: bg }, style]}>
       <Text style={[
         styles.label,
         { fontSize: size === 'sm' ? Typography.tiny : Typography.body, color: text },

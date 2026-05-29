@@ -192,15 +192,6 @@ export function usePrices() {
   };
 
   const handleSubmitPrice = () => {
-    if (isGuest) {
-      showAlert({
-        title: '👋 Sign in to contribute',
-        message: 'Guest users can view prices but signing in lets you submit prices and help the community.',
-        buttons: [{ text: 'OK' }],
-      });
-      return;
-    }
-
     if (!price || !selectedStore) {
       setError('Please enter a price and select a store');
       return;
