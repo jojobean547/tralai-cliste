@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { moderateScale, scale as sizeScale, verticalScale } from 'react-native-size-matters';
+
 export const Colors = {
   light: {
     // Backgrounds
@@ -55,6 +57,8 @@ export const Colors = {
     buttonSecondary:   '#2E7D32',
     greenTintBg:       '#DCEFDE',
     greenTintText:     '#2E7D32',
+    purpleTint:        '#F0ECFF',
+    greenTint:         '#E8F5EE',
 
     // Tab
     tabActive:     '#0B5D3B',
@@ -101,6 +105,8 @@ export const Colors = {
     greenTintBg:       '#162E22',
     greenTintText:     '#178241',
     buttonSecondary:   '#4CAF50',
+    purpleTint:        'transparent',
+    greenTint:         'transparent',
 
     // Tab
     tabActive:     '#1F7A4D',
@@ -110,42 +116,56 @@ export const Colors = {
   },
 } as const;
 
-export const Typography = {
-  // Font sizes — large for elderly/far-sighted users
-  heading1:  38,
-  heading2:  28,
-  heading3:  22,
-  body:      18,
-  bodySmall: 16,
-  caption:   14,
-  tiny:      12,
-
-  // Font weights
-  regular:   '400' as const,
-  medium:    '500' as const,
-  semibold:  '600' as const,
-  bold:      '700' as const,
+export const DensityScale = {
+  standard: 1.0,
+  compact:  0.75,
+  system:   null,
 } as const;
 
-export const Spacing = {
-  xs:  4,
-  sm:  8,
-  md:  12,
-  lg:  16,
-  xl:  20,
-  xxl: 28,
-} as const;
+export function getTypography(scale: number) {
+  return {
+    heading1:  moderateScale(32 * scale, 0.3),
+    heading2:  moderateScale(26 * scale, 0.3),
+    heading3:  moderateScale(22 * scale, 0.3),
+    body:      moderateScale(18 * scale, 0.3),
+    bodySmall: moderateScale(16 * scale, 0.3),
+    caption:   moderateScale(14 * scale, 0.3),
+    tiny:      moderateScale(12 * scale, 0.3),
+    regular:   '400' as const,
+    medium:    '500' as const,
+    semibold:  '600' as const,
+    bold:      '700' as const,
+  };
+}
 
-export const Radii = {
-  sm:   8,
-  md:   12,
-  lg:   16,
-  pill: 24,
-  full: 9999,
-} as const;
+export function getSpacing(scale: number) {
+  return {
+    xs:  sizeScale(4 * scale),
+    sm:  sizeScale(8 * scale),
+    md:  sizeScale(12 * scale),
+    lg:  sizeScale(16 * scale),
+    xl:  sizeScale(20 * scale),
+    xxl: sizeScale(28 * scale),
+  };
+}
+
+export function getRadii(scale: number) {
+  return {
+    sm:   sizeScale(8 * scale),
+    md:   sizeScale(12 * scale),
+    lg:   sizeScale(16 * scale),
+    pill: sizeScale(24 * scale),
+    full: 9999,
+  };
+}
+
+// Static defaults (scale=1.0) — kept for backwards compat until Step 4 migration
+export const Typography = getTypography(1.0);
+export const Spacing = getSpacing(1.0);
+export const Radii = getRadii(1.0);
 
 export const TouchTargets = {
   // Minimum 56dp for elderly users (WCAG recommendation)
-  minHeight: 56,
-  minWidth:  56,
-} as const;
+  minHeight: verticalScale(56),
+  minWidth:  sizeScale(56),
+};

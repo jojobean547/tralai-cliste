@@ -1,5 +1,7 @@
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { BasketProvider } from '@/hooks/useBasket';
+import { ThemeProvider } from '@/hooks/useTheme';
+import { UserPreferencesProvider } from '@/hooks/useUserPreferences';
 import { Stack, router } from 'expo-router';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -28,11 +30,15 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <BasketProvider>
-          <RootLayoutNav />
-        </BasketProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <UserPreferencesProvider>
+            <BasketProvider>
+              <RootLayoutNav />
+            </BasketProvider>
+          </UserPreferencesProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

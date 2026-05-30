@@ -1,3 +1,4 @@
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { createContext, ReactNode, useContext, useState } from 'react';
 
 export type BasketItem = {
@@ -8,6 +9,10 @@ export type BasketItem = {
   price: number;
   quantity: number;
   dealTotal?: number; // exact total when part of a deal
+  deal?: string | null;
+  club_card_price?: number | null;
+  club_card_name?: string | null;
+  deal_price?: number | null;
 };
 
 type BasketContextType = {
@@ -24,6 +29,7 @@ const BasketContext = createContext<BasketContextType | null>(null);
 
 export function BasketProvider({ children }: { children: ReactNode }) {
   const [basket, setBasket] = useState<BasketItem[]>([]);
+  const { hasClubCard } = useUserPreferences();
 
   const addItem = (item: Omit<BasketItem, 'quantity'> & { quantity?: number }) => {
     setBasket(prev => {
@@ -63,10 +69,22 @@ export function BasketProvider({ children }: { children: ReactNode }) {
 
   const clearBasket = () => setBasket([]);
 
-  const total = basket.reduce((sum, item) => {
-    if (item.dealTotal) return sum + item.dealTotal;
-    return sum + item.price * item.quantity;
-  }, 0);
+  const getEffectivePrice = (item: BasketItem): number => {
+    if (item.club_card_price && item.club_card_name && hasClubCard(item.club_card_name)) {
+      return item.club_card_price * item.quantity;
+    }
+    const deal = item.deal?.toLowerCase() ?? '';
+    const isThreeForTwo = deal.includes('for 2') || deal.includes('get 1 free');
+    if (isThreeForTwo && item.quantity >= 3) {
+      const freeItems = Math.floor(item.quantity / 3);
+      const paidItems = item.quantity - freeItems;
+      return item.price * paidItems;
+    }
+    if (item.deal && item.dealTotal && item.quantity >= 3) return item.dealTotal;
+    return item.price * item.quantity;
+  };
+
+  const total = basket.reduce((sum, item) => sum + getEffectivePrice(item), 0);
 
   const itemCount = basket.reduce((sum, item) => sum + item.quantity, 0);
 

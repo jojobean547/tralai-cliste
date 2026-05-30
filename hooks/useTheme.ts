@@ -16,12 +16,5 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from 'react-native';
-
-export function useTheme() {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  const colors = isDark ? Colors.dark : Colors.light;
-  return { colors, isDark };
-}
+export { useTheme, ThemeProvider } from './useThemeProvider';
+export type { DisplayDensity } from './useThemeProvider';

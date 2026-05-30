@@ -19,7 +19,6 @@
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StoreBadge } from '@/components/ui/StoreBadge';
-import { Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { PriceEntry } from '@/types/index';
 import { StyleSheet, Text, View } from 'react-native';
@@ -39,9 +38,58 @@ type Props = {
 };
 
 export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }: Props) {
-  const { colors } = useTheme();
+  const { colors, typography, spacing, radii } = useTheme();
 
   if (entries.length === 0) return null;
+
+  const styles = StyleSheet.create({
+    container: { width: '100%', marginBottom: spacing.xs },
+    heading: {
+      fontSize: typography.heading2,
+      fontWeight: typography.bold,
+      fontFamily: 'Inter',
+      marginBottom: spacing.sm,
+    },
+    card: { marginBottom: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+
+    mainRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    leftCol:  { flex: 1, alignItems: 'flex-start', justifyContent: 'center', gap: spacing.xs },
+    rightCol: { alignItems: 'flex-end', justifyContent: 'center', paddingHorizontal: spacing.sm },
+    price:    { fontSize: typography.heading1, fontWeight: typography.bold, fontFamily: 'Inter' },
+    bestLabel: { fontSize: typography.bodySmall, fontWeight: typography.bold, fontFamily: 'Inter' },
+
+    voteRow: { flexDirection: 'row', alignItems: 'center' },
+    voteText: { fontSize: typography.body, fontFamily: 'Inter' },
+    voteBtn:  { paddingHorizontal: spacing.xs, paddingVertical: 0 },
+    ageText:  { fontSize: typography.tiny, fontFamily: 'Inter' },
+    addBtn:   { alignSelf: 'center', marginLeft: spacing.xs },
+    addLabel: { fontSize: typography.bodySmall, fontWeight: '700', fontFamily: 'Inter' },
+    clubCardRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: 'rgba(242, 183, 5, 0.15)',
+      borderRadius: radii.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      marginTop: spacing.xs,
+      alignSelf: 'flex-end',
+    },
+    clubCardPrice: { fontSize: typography.tiny, fontWeight: '700', fontFamily: 'Inter' },
+    clubCardName:  { fontSize: typography.tiny, fontFamily: 'Inter' },
+    dealBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: 'rgba(242, 183, 5, 0.15)',
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+    },
+    dealBadgeText: { fontSize: typography.tiny, fontWeight: '700', fontFamily: 'Inter' },
+  });
 
   return (
     <View style={styles.container}>
@@ -52,52 +100,63 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
 
         return (
           <Card key={entry.id} variant={isCheapest ? 'highlight' : 'default'} style={styles.card}>
-            {/* Rows 1 & 2: two-column layout */}
             <View style={styles.mainRow}>
-              {/* Left: StoreBadge */}
               <View style={styles.leftCol}>
-                <StoreBadge store={entry.store_name} size="md" style={styles.storeBadge} />
-              </View>
-
-              {/* Right: price + Add button, then Best Price label */}
-              <View style={styles.rightCol}>
-                <View style={styles.priceAddRow}>
-                  <Text style={[styles.price, { color: colors.textPrimary }]}>
-                    €{entry.price.toFixed(2)}
-                  </Text>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    fullWidth={false}
-                    onPress={() => onAddToBasket(entry)}
-                    style={{ backgroundColor: colors.greenTintBg, borderWidth: 1.5, borderColor: colors.greenTintText }}
-                  >
-                    <Text style={[styles.addLabel, { color: colors.greenTintText }]}>Add</Text>
+                <StoreBadge store={entry.store_name} size="md" />
+                {!!entry.deal && (
+                  <View style={styles.dealBadge}>
+                    <Text style={[styles.dealBadgeText, { color: colors.accentGold }]}>🏷️ {entry.deal}</Text>
+                  </View>
+                )}
+                <Text style={[styles.ageText, { color: colors.textSecondary }]}>
+                  {getDaysAgo(entry.created_at)}
+                </Text>
+                <View style={styles.voteRow}>
+                  <Button variant="ghost" size="sm" fullWidth={false} style={styles.voteBtn} onPress={() => onConfirm(entry.id)}>
+                    <Text style={[styles.voteText, { color: colors.textSecondary }]}>
+                      👍{entry.confirms > 0 ? ` ${entry.confirms}` : ''}
+                    </Text>
+                  </Button>
+                  <Button variant="ghost" size="sm" fullWidth={false} style={styles.voteBtn} onPress={() => onFlag(entry.id)}>
+                    <Text style={[styles.voteText, { color: colors.textSecondary }]}>
+                      🚩{entry.flags > 0 ? ` ${entry.flags}` : ''}
+                    </Text>
                   </Button>
                 </View>
+              </View>
+
+              <View style={styles.rightCol}>
+                <Text style={[styles.price, { color: colors.textPrimary }]}>
+                  €{entry.price.toFixed(2)}
+                </Text>
+                {entry.club_card_price != null && (
+                  <View style={styles.clubCardRow}>
+                    <Text style={[styles.clubCardPrice, { color: colors.accentGold }]}>
+                      💳 €{entry.club_card_price.toFixed(2)}
+                    </Text>
+                    {!!entry.club_card_name && (
+                      <Text style={[styles.clubCardName, { color: colors.textSecondary }]}>
+                        {entry.club_card_name}
+                      </Text>
+                    )}
+                  </View>
+                )}
                 {isCheapest && (
-                  <Text style={[styles.bestLabel, { color: colors.primaryGreen }]}>
-                    ↘ Best Price
-                  </Text>
+                  entry.club_card_price != null && entry.club_card_price < entry.price
+                    ? <Text style={[styles.bestLabel, { color: colors.accentGold }]}>💳 Best with card</Text>
+                    : <Text style={[styles.bestLabel, { color: colors.primaryGreen }]}>↘ Best Price</Text>
                 )}
               </View>
-            </View>
 
-            {/* Row 3: voting buttons + daysAgo */}
-            <View style={styles.bottomRow}>
-              <Button variant="ghost" size="lg" fullWidth={false} style={styles.voteBtn} onPress={() => onConfirm(entry.id)}>
-                <Text style={[styles.voteText, { color: colors.textSecondary }]}>
-                  👍{entry.confirms > 0 ? ` ${entry.confirms}` : ''}
-                </Text>
+              <Button
+                variant="ghost"
+                size="sm"
+                fullWidth={false}
+                onPress={() => onAddToBasket(entry)}
+                style={[styles.addBtn, { backgroundColor: colors.greenTintBg, borderWidth: 1.5, borderColor: colors.greenTintText }]}
+              >
+                <Text style={[styles.addLabel, { color: colors.greenTintText }]}>Add</Text>
               </Button>
-              <Button variant="ghost" size="lg" fullWidth={false} style={styles.voteBtn} onPress={() => onFlag(entry.id)}>
-                <Text style={[styles.voteText, { color: colors.textSecondary }]}>
-                  🚩{entry.flags > 0 ? ` ${entry.flags}` : ''}
-                </Text>
-              </Button>
-              <Text style={[styles.ageText, { color: colors.textSecondary }]}>
-                {getDaysAgo(entry.created_at)}
-              </Text>
             </View>
           </Card>
         );
@@ -105,67 +164,3 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { width: '100%', marginBottom: Spacing.xs },
-  heading: {
-    fontSize: Typography.heading2,
-    fontWeight: Typography.bold,
-    fontFamily: 'Inter',
-    marginBottom: Spacing.sm,
-  },
-  card: { marginBottom: Spacing.sm, padding: Spacing.md },
-
-  // Rows 1 & 2
-  mainRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.xs,
-  },
-  leftCol: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  rightCol: {
-    alignItems: 'flex-end',
-  },
-  priceAddRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  price: {
-    fontSize: Typography.heading1,
-    fontWeight: Typography.bold,
-    fontFamily: 'Inter',
-  },
-  bestLabel: {
-    fontSize: Typography.body,
-    fontWeight: Typography.bold,
-    fontFamily: 'Inter',
-    marginTop: Spacing.xs,
-  },
-
-  // Row 3
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.xs,
-  },
-  voteText: {
-    fontSize: Typography.body,
-    fontFamily: 'Inter',
-  },
-  storeBadge: { paddingVertical: 2 },
-  voteBtn: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-  },
-  ageText: {
-    fontSize: Typography.body,
-    fontFamily: 'Inter',
-    marginLeft: 'auto',
-  },
-  addLabel: { fontSize: Typography.bodySmall, fontWeight: '700', fontFamily: 'Inter' },
-});

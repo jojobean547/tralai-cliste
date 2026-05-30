@@ -18,7 +18,6 @@
 
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 interface EmptyStateProps {
@@ -29,7 +28,32 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, subtitle, action }: EmptyStateProps) {
-  const { colors } = useTheme();
+  const { colors, typography, spacing } = useTheme();
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xxl,
+    },
+    iconWrap: { marginBottom: spacing.xl },
+    title: {
+      fontFamily: 'Inter',
+      fontSize: typography.heading2,
+      fontWeight: typography.semibold,
+      textAlign: 'center',
+      marginBottom: spacing.xl,
+    },
+    subtitle: {
+      fontFamily: 'Inter',
+      fontSize: typography.body,
+      fontWeight: typography.regular,
+      textAlign: 'center',
+      marginBottom: spacing.xl,
+    },
+    actionWrap: { marginTop: spacing.xl, alignSelf: 'stretch' },
+  });
 
   return (
     <View style={styles.container}>
@@ -42,33 +66,3 @@ export function EmptyState({ icon, title, subtitle, action }: EmptyStateProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.xxl,
-  },
-  iconWrap: {
-    marginBottom: Spacing.xl,
-  },
-  title: {
-    fontFamily: 'Inter',
-    fontSize: Typography.heading2,
-    fontWeight: Typography.semibold,
-    textAlign: 'center',
-    marginBottom: Spacing.xl,
-  },
-  subtitle: {
-    fontFamily: 'Inter',
-    fontSize: Typography.body,
-    fontWeight: Typography.regular,
-    textAlign: 'center',
-    marginBottom: Spacing.xl,
-  },
-  actionWrap: {
-    marginTop: Spacing.xl,
-    alignSelf: 'stretch',
-  },
-});

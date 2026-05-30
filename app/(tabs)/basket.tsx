@@ -20,10 +20,11 @@ import { AppAlert } from '@/components/ui/AppAlert';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useAlert } from '@/hooks/useAlert';
 import { useBasket } from '@/hooks/useBasket';
 import { useTheme } from '@/hooks/useTheme';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { useRouter } from 'expo-router';
 import {
   FlatList,
   Image,
@@ -36,14 +37,67 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BasketScreen() {
   const { basket, removeItem, updateQuantity, clearBasket, total, itemCount } = useBasket();
-  const { colors } = useTheme();
+  const { colors, isDark, typography, spacing, radii } = useTheme();
   const { showAlert, alertProps } = useAlert();
+  const { hasClubCard } = useUserPreferences();
+  const router = useRouter();
+
+  const styles = StyleSheet.create({
+    safe:                 { flex: 1 },
+    outer:                { flex: 1 },
+    emptyEmoji:           { fontSize: 64 },
+    emptyIconImage:       { width: spacing.xxl * 3, height: spacing.xxl * 3, borderRadius: radii.lg},
+    iconImage:            { width: spacing.xxl * 2, height: spacing.xxl * 2, borderRadius: radii.md},
+    header:               { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.xl, paddingBottom: spacing.md },
+    headerIcon:           { fontSize: typography.heading2 },
+    headerTitle:          { fontSize: typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
+    list:                 { flex: 1 },
+    listContent:          { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
+    itemCard:             { marginBottom: spacing.sm, padding: spacing.md },
+    itemRow:              { flexDirection: 'row', alignItems: 'center' },
+    itemImage:            { width: 56, height: 56, resizeMode: 'contain', borderRadius: radii.sm, marginRight: spacing.md },
+    itemImagePlaceholder: { width: 56, height: 56, borderRadius: radii.sm, justifyContent: 'center', alignItems: 'center', marginRight: spacing.md },
+    itemImageEmoji:       { fontSize: 24 },
+    itemInfo:             { flex: 1 },
+    itemName:             { fontSize: typography.heading2, fontWeight: '500', fontFamily: 'Inter', marginBottom: 2 },
+    itemStore:            { fontSize: typography.body, marginBottom: 2 },
+    itemPrice:            { fontSize: typography.heading2, fontWeight: '600', fontFamily: 'Inter' },
+    itemRight:            { alignItems: 'flex-end', marginLeft: spacing.sm, gap: spacing.sm },
+    qtyRow:               { flexDirection: 'row', alignItems: 'center' },
+    qtyBtn:               { width: 32, height: 32, borderRadius: radii.full, justifyContent: 'center', alignItems: 'center' },
+    qtyBtnText:           { fontSize: typography.heading2, fontWeight: '600' },
+    qtyText:              { fontSize: typography.heading3, fontWeight: '600', fontFamily: 'Inter', marginHorizontal: spacing.sm, minWidth: 20, textAlign: 'center' },
+    dealBadge:            { backgroundColor: colors.accentGold, borderRadius: radii.pill, paddingHorizontal: spacing.sm, paddingVertical: 2, alignSelf: 'flex-start', marginTop: 2 },
+    dealBadgeText:        { color: '#1A1C1E', fontSize: typography.caption, fontWeight: '700', fontFamily: 'Inter' },
+    dealPriceRow:         { flexDirection: 'row', alignItems: 'center' },
+    regularPrice:         { fontSize: typography.bodySmall, fontFamily: 'Inter', textDecorationLine: 'line-through' },
+    dealArrow:            { fontSize: typography.bodySmall, fontFamily: 'Inter', marginHorizontal: spacing.xs },
+    dealFinalPrice:       { fontSize: typography.heading3, fontWeight: '700', fontFamily: 'Inter' },
+    dealPriceLabel:       { fontSize: typography.tiny, fontFamily: 'Inter' },
+    clubCardRow:          { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+    clubCardText:         { fontSize: typography.bodySmall, fontWeight: '700', fontFamily: 'Inter' },
+    clubCardName:         { fontSize: typography.bodySmall, fontFamily: 'Inter' },
+    dealHint:             { fontSize: typography.tiny, fontFamily: 'Inter', marginTop: 2 },
+    footer:               { borderTopWidth: 0.5, padding: spacing.xl },
+    totalRow:             { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
+    totalLabel:           { fontSize: typography.heading3 },
+    totalAmount:          { fontSize: 36, fontWeight: '700', fontFamily: 'Inter' },
+  });
 
   if (basket.length === 0) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
         <EmptyState
-          icon={<Text style={styles.emptyEmoji}>🛒</Text>}
+          icon={
+            <Image
+              source={
+                isDark
+                  ? require('@/assets/images/app_icon_dark.png')
+                  : require('@/assets/images/app_icon_dark.png')}
+              style={styles.emptyIconImage}
+              resizeMode="contain"
+          />
+          }
           title="Your basket is empty"
           subtitle='Scan a product and tap "Add" to add items'
         />
@@ -57,7 +111,14 @@ export default function BasketScreen() {
 
         {/* Fixed header */}
         <View style={styles.header}>
-          <Text style={styles.headerIcon}>🛒</Text>
+          <Image
+              source={
+                isDark
+                  ? require('@/assets/images/app_icon_dark.png')
+                  : require('@/assets/images/app_icon_dark.png')}
+              style={styles.iconImage}
+              resizeMode="contain"
+          />
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>My Basket</Text>
         </View>
 
@@ -84,9 +145,126 @@ export default function BasketScreen() {
                   <Text style={[styles.itemStore, { color: colors.textSecondary }]}>
                     {item.store_name}
                   </Text>
-                  <Text style={[styles.itemPrice, { color: colors.primaryGreen }]}>
-                    €{(item.dealTotal ?? item.price * item.quantity).toFixed(2)}
-                  </Text>
+                  {!!item.deal && (
+                    <View style={styles.dealBadge}>
+                      <Text style={styles.dealBadgeText}>🏷️ {item.deal}</Text>
+                    </View>
+                  )}
+                  {(() => {
+                    const dealLower = item.deal?.toLowerCase() ?? '';
+                    const isThreeForTwo = dealLower.includes('for 2') || dealLower.includes('get 1 free');
+
+                    if (isThreeForTwo && item.deal_price != null) {
+                      if (item.quantity >= 3) {
+                        const freeItems = Math.floor(item.quantity / 3);
+                        const paidItems = item.quantity - freeItems;
+                        return (
+                          <>
+                            <View style={styles.dealPriceRow}>
+                              <Text style={[styles.regularPrice, { color: colors.textSecondary }]}>
+                                €{(item.price * item.quantity).toFixed(2)}
+                              </Text>
+                              <Text style={[styles.dealArrow, { color: colors.textSecondary }]}>→</Text>
+                              <Text style={[styles.dealFinalPrice, { color: colors.primaryGreen }]}>
+                                €{(item.price * paidItems).toFixed(2)}
+                              </Text>
+                            </View>
+                            <View style={styles.dealBadge}>
+                              <Text style={styles.dealBadgeText}>
+                                🎁 {freeItems} item{freeItems > 1 ? 's' : ''} free
+                              </Text>
+                            </View>
+                          </>
+                        );
+                      }
+                      return (
+                        <>
+                          <Text style={[styles.itemPrice, { color: colors.primaryGreen }]}>
+                            €{(item.price * item.quantity).toFixed(2)}
+                          </Text>
+                          <Text style={[styles.dealHint, { color: colors.accentGold }]}>
+                            Add {3 - item.quantity} more for deal
+                          </Text>
+                        </>
+                      );
+                    }
+
+                    if (item.deal && item.dealTotal != null && item.quantity >= 3) {
+                      return (
+                        <>
+                          <View style={styles.dealPriceRow}>
+                            <Text style={[styles.regularPrice, { color: colors.textSecondary }]}>
+                              €{(item.price * item.quantity).toFixed(2)}
+                            </Text>
+                            <Text style={[styles.dealArrow, { color: colors.textSecondary }]}>→</Text>
+                            <Text style={[styles.dealFinalPrice, { color: colors.primaryGreen }]}>
+                              €{item.dealTotal.toFixed(2)}
+                            </Text>
+                          </View>
+                          <Text style={[styles.dealPriceLabel, { color: colors.textSecondary }]}>
+                            Deal price
+                          </Text>
+                          {item.club_card_price != null && (
+                            <View style={styles.clubCardRow}>
+                              <Text style={[styles.clubCardText, { color: colors.accentGold }]}>
+                                💳 €{item.club_card_price.toFixed(2)}
+                              </Text>
+                              {!!item.club_card_name && (
+                                <Text style={[styles.clubCardName, { color: colors.textSecondary }]}>
+                                  {' '}{item.club_card_name}
+                                </Text>
+                              )}
+                            </View>
+                          )}
+                        </>
+                      );
+                    }
+
+                    if (item.club_card_price != null) {
+                      const userHasCard = !!item.club_card_name && hasClubCard(item.club_card_name);
+                      if (userHasCard) {
+                        return (
+                          <>
+                            <View style={styles.dealPriceRow}>
+                              <Text style={[styles.regularPrice, { color: colors.textSecondary }]}>
+                                €{(item.price * item.quantity).toFixed(2)}
+                              </Text>
+                              <Text style={[styles.dealArrow, { color: colors.textSecondary }]}>→</Text>
+                              <Text style={[styles.dealFinalPrice, { color: colors.accentGold }]}>
+                                💳 €{(item.club_card_price * item.quantity).toFixed(2)}
+                              </Text>
+                            </View>
+                            {!!item.club_card_name && (
+                              <Text style={[styles.dealPriceLabel, { color: colors.textSecondary }]}>
+                                {item.club_card_name}
+                              </Text>
+                            )}
+                          </>
+                        );
+                      }
+                      return (
+                        <>
+                          <Text style={[styles.itemPrice, { color: colors.primaryGreen }]}>
+                            €{(item.price * item.quantity).toFixed(2)}
+                          </Text>
+                          <Text style={[styles.dealHint, { color: colors.accentGold }]}>
+                            💳 €{item.club_card_price.toFixed(2)} available with {item.club_card_name}
+                          </Text>
+                          <TouchableOpacity onPress={() => router.push('/(tabs)/settings')}>
+                            <Text style={[styles.dealHint, { color: colors.accentGold }]}>
+                              Add card in Settings →
+                            </Text>
+                          </TouchableOpacity>
+                        </>
+                      );
+                    }
+
+                    return (
+                      <Text style={[styles.itemPrice, { color: colors.primaryGreen }]}>
+                        €{(item.price * item.quantity).toFixed(2)}
+                      </Text>
+                    );
+                  })()}
                 </View>
                 <View style={styles.itemRight}>
                   <View style={styles.qtyRow}>
@@ -150,32 +328,3 @@ export default function BasketScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  outer: { flex: 1 },
-  emptyEmoji: { fontSize: 64 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.xl, paddingBottom: Spacing.md },
-  headerIcon: { fontSize: Typography.heading2 },
-  headerTitle: { fontSize: Typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
-  list: { flex: 1 },
-  listContent: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl },
-  itemCard: { marginBottom: Spacing.sm, padding: Spacing.md },
-  itemRow: { flexDirection: 'row', alignItems: 'center' },
-  itemImage: { width: 56, height: 56, resizeMode: 'contain', borderRadius: Radii.sm, marginRight: Spacing.md },
-  itemImagePlaceholder: { width: 56, height: 56, borderRadius: Radii.sm, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
-  itemImageEmoji: { fontSize: 24 },
-  itemInfo: { flex: 1 },
-  itemName: { fontSize: Typography.heading2, fontWeight: '500', fontFamily: 'Inter', marginBottom: 2 },
-  itemStore: { fontSize: Typography.body, marginBottom: 2 },
-  itemPrice: { fontSize: Typography.heading2, fontWeight: '600', fontFamily: 'Inter' },
-  itemRight: { alignItems: 'flex-end', marginLeft: Spacing.sm, gap: Spacing.sm },
-  qtyRow: { flexDirection: 'row', alignItems: 'center' },
-  qtyBtn: { width: 32, height: 32, borderRadius: Radii.full, justifyContent: 'center', alignItems: 'center' },
-  qtyBtnText: { fontSize: Typography.heading2, fontWeight: '600' },
-  qtyText: { fontSize: Typography.heading3, fontWeight: '600', fontFamily: 'Inter', marginHorizontal: Spacing.sm, minWidth: 20, textAlign: 'center' },
-  footer: { borderTopWidth: 0.5, padding: Spacing.xl },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
-  totalLabel: { fontSize: Typography.heading3 },
-  totalAmount: { fontSize: 36, fontWeight: '700', fontFamily: 'Inter' },
-});

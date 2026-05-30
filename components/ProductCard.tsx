@@ -20,10 +20,12 @@ import StoreSelector from '@/components/StoreSelector';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { STORES } from '@/constants/stores';
-import { Radii, Spacing, TouchTargets, Typography } from '@/constants/theme';
+import { TouchTargets } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { Product } from '@/types/index';
-import { Image, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+
+const CLUB_CARD_NAMES = ['Tesco Clubcard', 'Real Rewards', 'Lidl Plus', 'Other'] as const;
 
 type Props = {
   product: Product;
@@ -35,13 +37,42 @@ type Props = {
   onStoreSelect: (s: string) => void;
   onSubmit: () => void;
   saving: boolean;
+  hasClubCard: boolean;
+  onToggleClubCard: () => void;
+  clubCardPrice: string;
+  onClubCardPriceChange: (p: string) => void;
+  clubCardName: string;
+  onClubCardNameChange: (n: string) => void;
 };
 
 export default function ProductCard({
   product, price, onPriceChange, onScanTag,
   aiLoading, selectedStore, onStoreSelect, onSubmit, saving,
+  hasClubCard, onToggleClubCard, clubCardPrice, onClubCardPriceChange,
+  clubCardName, onClubCardNameChange,
 }: Props) {
-  const { colors } = useTheme();
+  const { colors, typography, spacing, radii, isDark } = useTheme();
+
+  const styles = StyleSheet.create({
+    cardSpacing:        { width: '100%', marginBottom: spacing.lg },
+    image:              { width: 120, height: 120, resizeMode: 'contain', marginBottom: spacing.md, alignSelf: 'center' },
+    name:               { fontSize: typography.heading1, fontWeight: '700', fontFamily: 'Inter', textAlign: 'center', marginBottom: spacing.xs },
+    brand:              { fontSize: typography.heading3, textAlign: 'center', marginBottom: 2 },
+    quantity:           { fontSize: typography.body, textAlign: 'center', marginBottom: spacing.md },
+    label:              { fontSize: typography.body, fontWeight: '500', marginBottom: spacing.sm, marginTop: spacing.md },
+    input:              { borderWidth: 1, borderRadius: radii.sm, padding: spacing.md, fontSize: typography.heading2, width: '100%', marginBottom: spacing.sm, minHeight: TouchTargets.minHeight },
+    buttonSpacing:      { marginBottom: spacing.xs },
+    outlineLabel:       { fontSize: typography.body, fontWeight: '700', fontFamily: 'Inter' },
+    clubCardToggle:     { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md, marginBottom: spacing.sm },
+    checkbox:           { width: 20, height: 20, borderWidth: 2, borderRadius: radii.sm, marginRight: spacing.sm, alignItems: 'center', justifyContent: 'center' },
+    checkmark:          { color: '#1A1C1E', fontSize: 12, fontWeight: '700' },
+    clubCardToggleLabel: { fontSize: typography.body, fontFamily: 'Inter' },
+    clubCardBox:        { borderWidth: 1.5, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, backgroundColor: 'rgba(242, 183, 5, 0.10)' },
+    clubCardTitle:      { fontSize: typography.body, fontWeight: '700', fontFamily: 'Inter', marginBottom: spacing.sm },
+    pillRow:            { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm },
+    pill:               { borderWidth: 1.5, borderRadius: radii.pill, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+    pillLabel:          { fontSize: typography.tiny, fontWeight: '600', fontFamily: 'Inter' },
+  });
 
   return (
     <Card style={styles.cardSpacing}>
@@ -73,13 +104,61 @@ export default function ProductCard({
           variant="ghost"
           onPress={onScanTag}
           loading={aiLoading}
-          style={{ borderWidth: 2, borderColor: colors.accentPurple }}
+          style={{ borderWidth: 2, borderColor: colors.accentPurple, backgroundColor: isDark ? 'transparent' : colors.purpleTint }}
         >
           <Text style={[styles.outlineLabel, { color: colors.accentPurple }]}>
             {!aiLoading ? '📷  Scan Price Tag Instead' : 'AI reading price...'}
           </Text>
         </Button>
       </View>
+
+      <Pressable
+        onPress={onToggleClubCard}
+        style={styles.clubCardToggle}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: hasClubCard }}
+      >
+        <View style={[styles.checkbox, { borderColor: colors.accentGold }, hasClubCard && { backgroundColor: colors.accentGold }]}>
+          {hasClubCard && <Text style={styles.checkmark}>✓</Text>}
+        </View>
+        <Text style={[styles.clubCardToggleLabel, { color: colors.textPrimary }]}>
+          This store has a club card price
+        </Text>
+      </Pressable>
+
+      {hasClubCard && (
+        <View style={[styles.clubCardBox, { borderColor: colors.accentGold }]}>
+          <Text style={[styles.clubCardTitle, { color: colors.accentGold }]}>💳 Club Card Price</Text>
+          <TextInput
+            style={[styles.input, { borderColor: colors.border, backgroundColor: colors.background, color: colors.textPrimary }]}
+            keyboardType="decimal-pad"
+            placeholder="Club card price e.g. 2.99"
+            placeholderTextColor={colors.textSecondary}
+            value={clubCardPrice}
+            onChangeText={onClubCardPriceChange}
+          />
+          <View style={styles.pillRow}>
+            {CLUB_CARD_NAMES.map(name => (
+              <Pressable
+                key={name}
+                onPress={() => onClubCardNameChange(name)}
+                style={[
+                  styles.pill,
+                  { borderColor: colors.accentGold },
+                  clubCardName === name && { backgroundColor: colors.accentGold },
+                ]}
+              >
+                <Text style={[
+                  styles.pillLabel,
+                  { color: clubCardName === name ? '#1A1C1E' : colors.accentGold },
+                ]}>
+                  {name}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
 
       <StoreSelector
         stores={STORES}
@@ -91,7 +170,7 @@ export default function ProductCard({
         variant="ghost"
         onPress={onSubmit}
         loading={saving}
-        style={{ borderWidth: 2, borderColor: colors.buttonPrimary }}
+        style={{ borderWidth: 2, borderColor: colors.buttonPrimary, backgroundColor: isDark ? 'transparent' : colors.greenTint }}
       >
         <Text style={[styles.outlineLabel, { color: colors.buttonPrimary }]}>
           Submit Price 💾
@@ -100,15 +179,3 @@ export default function ProductCard({
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  cardSpacing: { width: '100%', marginBottom: Spacing.lg },
-  image: { width: 120, height: 120, resizeMode: 'contain', marginBottom: Spacing.md, alignSelf: 'center' },
-  name: { fontSize: Typography.heading1, fontWeight: '700', fontFamily: 'Inter', textAlign: 'center', marginBottom: Spacing.xs },
-  brand: { fontSize: Typography.heading3, textAlign: 'center', marginBottom: 2 },
-  quantity: { fontSize: Typography.body, textAlign: 'center', marginBottom: Spacing.md },
-  label: { fontSize: Typography.body, fontWeight: '500', marginBottom: Spacing.sm, marginTop: Spacing.md },
-  input: { borderWidth: 1, borderRadius: Radii.sm, padding: Spacing.md, fontSize: Typography.heading2, width: '100%', marginBottom: Spacing.sm, minHeight: TouchTargets.minHeight },
-  buttonSpacing: { marginBottom: Spacing.xs },
-  outlineLabel: { fontSize: Typography.body, fontWeight: '700', fontFamily: 'Inter' },
-});

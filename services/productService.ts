@@ -20,11 +20,25 @@ import { Product } from '@/types/index';
 
 const OFF_USER_AGENT = 'Tralai/1.0 (tralai.ie) - Irish grocery price comparison app';
 
-export async function fetchProduct(barcode: string): Promise<Product | null> {
-  const response = await fetch(
-    `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`,
-    { headers: { 'User-Agent': OFF_USER_AGENT } }
-  );
+const OFF_DATABASES = [
+  'world.openfoodfacts.org',
+  'world.openbeautyfacts.org',
+  'world.openproductsfacts.org',
+];
+
+async function queryDatabase(
+  host: string,
+  barcode: string
+): Promise<Product | null> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://${host}/api/v0/product/${barcode}.json`,
+      { headers: { 'User-Agent': OFF_USER_AGENT } }
+    );
+  } catch {
+    return null;
+  }
 
   const text = await response.text();
 
@@ -35,9 +49,14 @@ export async function fetchProduct(barcode: string): Promise<Product | null> {
     return null;
   }
 
-  if (data.status !== 1) {
-    return null;
-  }
-
+  if (data.status !== 1) return null;
   return { ...data.product, barcode };
+}
+
+export async function fetchProduct(barcode: string): Promise<Product | null> {
+  for (const host of OFF_DATABASES) {
+    const result = await queryDatabase(host, barcode);
+    if (result) return result;
+  }
+  return null;
 }

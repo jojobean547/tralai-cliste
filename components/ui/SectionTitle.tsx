@@ -18,7 +18,6 @@
 
 import React from 'react';
 import { StyleSheet, Text, TextStyle } from 'react-native';
-import { Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 interface SectionTitleProps {
@@ -27,7 +26,16 @@ interface SectionTitleProps {
 }
 
 export function SectionTitle({ children, style }: SectionTitleProps) {
-  const { colors } = useTheme();
+  const { colors, typography, spacing } = useTheme();
+
+  const styles = StyleSheet.create({
+    title: {
+      fontFamily: 'Inter',
+      fontSize: typography.heading2,
+      fontWeight: typography.semibold,
+      marginBottom: spacing.md,
+    },
+  });
 
   return (
     <Text style={[styles.title, { color: colors.textPrimary }, style]}>
@@ -35,12 +43,3 @@ export function SectionTitle({ children, style }: SectionTitleProps) {
     </Text>
   );
 }
-
-const styles = StyleSheet.create({
-  title: {
-    fontFamily: 'Inter',
-    fontSize: Typography.heading2,
-    fontWeight: Typography.semibold,
-    marginBottom: Spacing.md,
-  },
-});

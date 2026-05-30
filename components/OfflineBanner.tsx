@@ -16,14 +16,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { StyleSheet, Text, View } from 'react-native';
 
 type Props = { isOnline: boolean };
 
 export default function OfflineBanner({ isOnline }: Props) {
-  const { colors } = useTheme();
+  const { colors, typography, spacing, radii } = useTheme();
+
+  const styles = StyleSheet.create({
+    banner: { padding: spacing.sm, borderRadius: radii.sm, width: '100%', marginBottom: spacing.md },
+    text: { color: '#1A1C1E', textAlign: 'center', fontSize: typography.bodySmall, fontWeight: '600', fontFamily: 'Inter' },
+  });
+
   if (isOnline) return null;
   return (
     <View style={[styles.banner, { backgroundColor: colors.accentGold }]}>
@@ -31,8 +36,3 @@ export default function OfflineBanner({ isOnline }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  banner: { padding: Spacing.sm, borderRadius: Radii.sm, width: '100%', marginBottom: Spacing.md },
-  text: { color: '#1A1C1E', textAlign: 'center', fontSize: Typography.bodySmall, fontWeight: '600', fontFamily: 'Inter' },
-});

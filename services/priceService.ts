@@ -43,7 +43,7 @@ export async function fetchPrices(barcode: string): Promise<PriceEntry[]> {
 
   const { data, error } = await supabase
     .from('prices')
-    .select('id, store_name, price, created_at, confirms, flags')
+    .select('id, store_name, price, created_at, confirms, flags, deal, deal_price, club_card_price, club_card_name')
     .eq('barcode', barcode)
     .eq('status', 'active')
     .gte('created_at', thirtyDaysAgo.toISOString())

@@ -19,9 +19,9 @@
 import OfflineBanner from '@/components/OfflineBanner';
 import PriceList from '@/components/PriceList';
 import ProductCard from '@/components/ProductCard';
+import ProductSummary from '@/components/ProductSummary';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { Button } from '@/components/ui/Button';
-import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useNetwork } from '@/hooks/useNetwork';
 import { usePrices } from '@/hooks/usePrices';
 import { useTheme } from '@/hooks/useTheme';
@@ -37,14 +37,42 @@ export default function HomeScreen() {
   const [scanning, setScanning] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const { isOnline } = useNetwork();
-  const { colors } = useTheme();
+  const { colors, typography, spacing, radii, isDark } = useTheme();
   const {
     priceEntries, product, price, selectedStore, setSelectedStore,
     submitted, saving, aiLoading, error, loading,
+    hasClubCard, setHasClubCard, clubCardPrice, setClubCardPrice,
+    clubCardName, setClubCardName,
     lookUpProduct, handleSubmitPrice, handleConfirmPrice, handleFlagPrice,
     handleScanPriceTag, handleAddToBasket, handlePriceChange, resetScan,
     alertProps,
   } = usePrices();
+
+  const styles = StyleSheet.create({
+    safe:           { flex: 1 },
+    centred:        { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl, gap: spacing.lg },
+    header:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
+    headerLeft:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    logoImage:      { width: 92, height: 92, borderRadius: 2 },
+    title:          { fontSize: typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
+    onlinePill:     { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, borderWidth: 1 },
+    onlinePillText: { fontSize: typography.bodySmall, fontWeight: '600' },
+    scrollWrapper:  { flex: 1 },
+    scrollContent:  { flexGrow: 1, padding: spacing.xl },
+    scanArea:       { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: radii.lg, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg, minHeight: 160, justifyContent: 'center' },
+    scanIcon:       { fontSize: 40 },
+    scanText:       { fontSize: typography.body, textAlign: 'center' },
+    loadingRow:     { alignItems: 'center', gap: spacing.md, marginVertical: spacing.xl },
+    message:        { fontSize: typography.body, textAlign: 'center' },
+    errorBox:       { padding: spacing.md, borderRadius: radii.sm, marginBottom: spacing.md, borderWidth: 1 },
+    error:          { fontSize: typography.bodySmall, textAlign: 'center' },
+    noPricesBox:    { padding: spacing.md, borderRadius: radii.md, marginBottom: spacing.md, borderWidth: 1 },
+    noPricesText:   { fontSize: typography.bodySmall, textAlign: 'center' },
+    successBox:     { padding: spacing.lg, borderRadius: radii.md, marginBottom: spacing.xl, borderWidth: 1 },
+    successText:    { fontSize: typography.body, textAlign: 'center' },
+    scanBtnSpacing: { marginTop: spacing.sm },
+    scanBtnLabel:   { fontSize: typography.body, fontWeight: '700', fontFamily: 'Inter' },
+  });
 
   if (!permission) return <View style={[styles.safe, { backgroundColor: colors.background }]} />;
 
@@ -79,7 +107,10 @@ export default function HomeScreen() {
           <View style={[styles.header, { backgroundColor: colors.background }]}>
             <View style={styles.headerLeft}>
               <Image
-                source={require('@/assets/images/tralai_cliste_app_logo_outline_no_bg.png')}
+                source={
+                  isDark
+                    ? require('@/assets/images/app_icon_dark.png')
+                    : require('@/assets/images/app_icon_dark.png')}
                 style={styles.logoImage}
               />
               <Text style={[styles.title, { color: colors.textPrimary }]}>Tralaí Cliste</Text>
@@ -134,6 +165,12 @@ export default function HomeScreen() {
                   onStoreSelect={setSelectedStore}
                   onSubmit={handleSubmitPrice}
                   saving={saving}
+                  hasClubCard={hasClubCard}
+                  onToggleClubCard={() => setHasClubCard(v => !v)}
+                  clubCardPrice={clubCardPrice}
+                  onClubCardPriceChange={setClubCardPrice}
+                  clubCardName={clubCardName}
+                  onClubCardNameChange={setClubCardName}
                 />
               )}
 
@@ -143,6 +180,10 @@ export default function HomeScreen() {
                     ✅ Price saved! Thank you for helping the community!
                   </Text>
                 </View>
+              )}
+
+              {submitted && !!product && (
+                <ProductSummary product={product} />
               )}
 
               <PriceList
@@ -163,7 +204,7 @@ export default function HomeScreen() {
               <Button
                 variant="ghost"
                 onPress={() => { resetScan(); setScanning(true); }}
-                style={[styles.scanBtnSpacing, { borderWidth: 2, borderColor: colors.buttonSecondary }]}
+                style={[styles.scanBtnSpacing, { borderWidth: 2, borderColor: colors.buttonSecondary, backgroundColor: isDark ? 'transparent' : colors.greenTint }]}
               >
                 <Text style={[styles.scanBtnLabel, { color: colors.buttonSecondary }]}>
                   {product ? 'Scan Another Product' : 'Scan a Product'}
@@ -179,29 +220,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  centred: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl, gap: Spacing.lg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  logoImage: { width: 92, height: 92, borderRadius: 2 },
-  title: { fontSize: Typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
-  onlinePill: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: Radii.pill, borderWidth: 1 },
-  onlinePillText: { fontSize: Typography.bodySmall, fontWeight: '600' },
-  scrollWrapper: { flex: 1 },
-  scrollContent: { flexGrow: 1, padding: Spacing.xl },
-  scanArea: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: Radii.lg, padding: Spacing.xxl, alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.lg, minHeight: 160, justifyContent: 'center' },
-  scanIcon: { fontSize: 40 },
-  scanText: { fontSize: Typography.body, textAlign: 'center' },
-  loadingRow: { alignItems: 'center', gap: Spacing.md, marginVertical: Spacing.xl },
-  message: { fontSize: Typography.body, textAlign: 'center' },
-  errorBox: { padding: Spacing.md, borderRadius: Radii.sm, marginBottom: Spacing.md, borderWidth: 1 },
-  error: { fontSize: Typography.bodySmall, textAlign: 'center' },
-  noPricesBox: { padding: Spacing.md, borderRadius: Radii.md, marginBottom: Spacing.md, borderWidth: 1 },
-  noPricesText: { fontSize: Typography.bodySmall, textAlign: 'center' },
-  successBox: { padding: Spacing.lg, borderRadius: Radii.md, marginBottom: Spacing.xl, borderWidth: 1 },
-  successText: { fontSize: Typography.body, textAlign: 'center' },
-  scanBtnSpacing: { marginTop: Spacing.sm },
-  scanBtnLabel: { fontSize: Typography.body, fontWeight: '700', fontFamily: 'Inter' },
-});

@@ -18,7 +18,6 @@
 
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { Radii, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 type Variant = 'default' | 'highlight' | 'danger';
@@ -31,7 +30,7 @@ interface CardProps {
 }
 
 export function Card({ variant = 'default', children, onPress, style }: CardProps) {
-  const { colors } = useTheme();
+  const { colors, spacing, radii } = useTheme();
 
   const variantStyles: Record<Variant, { bg: string; border: string; borderWidth: number }> = {
     default:   { bg: colors.surface,   border: colors.border,       borderWidth: 1 },
@@ -40,6 +39,13 @@ export function Card({ variant = 'default', children, onPress, style }: CardProp
   };
 
   const { bg, border, borderWidth } = variantStyles[variant];
+
+  const styles = StyleSheet.create({
+    base: {
+      borderRadius: radii.lg,
+      padding: spacing.lg,
+    },
+  });
 
   const containerStyle = [
     styles.base,
@@ -57,10 +63,3 @@ export function Card({ variant = 'default', children, onPress, style }: CardProp
 
   return <View style={containerStyle}>{children}</View>;
 }
-
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: Radii.lg,
-    padding: Spacing.lg,
-  },
-});

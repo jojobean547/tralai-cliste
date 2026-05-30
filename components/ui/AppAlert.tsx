@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -35,7 +34,52 @@ export interface AppAlertProps {
 }
 
 export function AppAlert({ visible, title, message, buttons, onDismiss }: AppAlertProps) {
-  const { colors } = useTheme();
+  const { colors, typography, spacing, radii } = useTheme();
+
+  const styles = StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    card: {
+      width: '85%',
+      borderRadius: radii.lg,
+      borderWidth: 0.5,
+      padding: spacing.xl,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    title: {
+      fontSize: typography.heading1,
+      fontWeight: '600',
+      fontFamily: 'Inter',
+    },
+    message: {
+      fontSize: typography.body,
+      fontFamily: 'Inter',
+      marginTop: spacing.sm,
+      lineHeight: typography.body * 1.5,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: spacing.xl,
+      gap: spacing.lg,
+      flexWrap: 'wrap',
+    },
+    buttonBase: {
+      fontSize: typography.body,
+      fontFamily: 'Inter',
+      paddingVertical: 4,
+    },
+    buttonBold: {
+      fontWeight: '600',
+    },
+  });
 
   const handleButtonPress = (btn: AlertButton) => {
     onDismiss();
@@ -98,49 +142,3 @@ export function AppAlert({ visible, title, message, buttons, onDismiss }: AppAle
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  card: {
-    width: '85%',
-    borderRadius: Radii.lg,
-    borderWidth: 0.5,
-    padding: Spacing.xl,
-    // iOS shadow
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    // Android elevation
-    elevation: 8,
-  },
-  title: {
-    fontSize: Typography.heading1,
-    fontWeight: '600',
-    fontFamily: 'Inter',
-  },
-  message: {
-    fontSize: Typography.body,
-    fontFamily: 'Inter',
-    marginTop: Spacing.sm,
-    lineHeight: Typography.body * 1.5,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: Spacing.xl,
-    gap: Spacing.lg,
-    flexWrap: 'wrap',
-  },
-  buttonBase: {
-    fontSize: Typography.body,
-    fontFamily: 'Inter',
-    paddingVertical: 4,
-  },
-  buttonBold: {
-    fontWeight: '600',
-  },
-});

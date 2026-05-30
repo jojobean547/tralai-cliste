@@ -44,8 +44,13 @@ export function usePrices() {
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [hasClubCard, setHasClubCard] = useState(false);
+  const [clubCardPrice, setClubCardPrice] = useState('');
+  const [clubCardName, setClubCardName] = useState('');
   const [dealQuantity, setDealQuantity] = useState(1);
   const [dealTotal, setDealTotal] = useState<number | null>(null);
+  const [dealPrice, setDealPrice] = useState<number | null>(null);
+  const [dealText, setDealText] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -160,12 +165,19 @@ export function usePrices() {
     setError('');
 
     try {
+      const parsedClubCardPrice = hasClubCard && clubCardPrice ? parseFloat(clubCardPrice) : null;
+      const resolvedClubCardName = hasClubCard && clubCardName ? clubCardName : null;
+      const resolvedDeal = dealTotal && dealText ? dealText : null;
+
       if (!isOnline) {
         addPendingSubmission({
           barcode: product.barcode,
           product_name: product.product_name || 'Unknown',
           store_name: selectedStore,
           price: parsedPrice,
+          club_card_price: parsedClubCardPrice,
+          club_card_name: resolvedClubCardName,
+          deal: resolvedDeal,
         });
         setSubmitted(true);
         return;
@@ -176,6 +188,10 @@ export function usePrices() {
         product_name: product.product_name || 'Unknown',
         store_name: selectedStore,
         price: parsedPrice,
+        deal: resolvedDeal,
+        deal_price: dealPrice ?? null,
+        club_card_price: parsedClubCardPrice,
+        club_card_name: resolvedClubCardName,
       });
       setSubmitted(true);
 
@@ -306,6 +322,7 @@ export function usePrices() {
     try {
       const priceData = await scanPriceTag(result.assets[0].base64);
       setPrice(String(priceData.single_price));
+      if (priceData.has_deal && priceData.deal) setDealText(priceData.deal);
 
       let message = `Single price: €${priceData.single_price}`;
       if (priceData.has_deal && priceData.deal) {
@@ -333,7 +350,8 @@ export function usePrices() {
                     priceData.single_price
                   );
                   const safeQuantity = Math.min(quantity, 20); // Bug #16: cap AI-returned quantity
-                  setPrice(String(priceData.deal_price_per_item!.toFixed(2)));
+                  setPrice(String(priceData.single_price));
+                  setDealPrice(priceData.deal_price_per_item);
                   setDealQuantity(safeQuantity);
                   setDealTotal(totalPrice);
                   if (safeQuantity > 1) {
@@ -376,7 +394,11 @@ export function usePrices() {
       price: entry.price,
       quantity: dealQuantity,
       dealTotal: dealTotal || undefined,
-    } as any);
+      deal: entry.deal ?? null,
+      club_card_price: entry.club_card_price ?? null,
+      club_card_name: entry.club_card_name ?? null,
+      deal_price: entry.deal_price ?? null,
+    });
 
     const msg = dealQuantity > 1
       ? `${product.product_name} × ${dealQuantity} added (deal quantity)`
@@ -397,6 +419,11 @@ export function usePrices() {
     setSelectedStore('');
     setDealQuantity(1);
     setDealTotal(null);
+    setDealPrice(null);
+    setHasClubCard(false);
+    setClubCardPrice('');
+    setClubCardName('');
+    setDealText('');
   };
 
   const handlePriceChange = (text: string) => {
@@ -414,6 +441,12 @@ export function usePrices() {
     submitted,
     saving,
     aiLoading,
+    hasClubCard,
+    setHasClubCard,
+    clubCardPrice,
+    setClubCardPrice,
+    clubCardName,
+    setClubCardName,
     dealQuantity,
     dealTotal,
     error,

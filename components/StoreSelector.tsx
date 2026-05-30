@@ -17,7 +17,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { StoreBadge } from '@/components/ui/StoreBadge';
-import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -28,7 +27,13 @@ type Props = {
 };
 
 export default function StoreSelector({ stores, selectedStore, onSelect }: Props) {
-  const { colors } = useTheme();
+  const { colors, typography, spacing, radii } = useTheme();
+
+  const styles = StyleSheet.create({
+    label: { fontSize: typography.body, fontWeight: '500', marginBottom: spacing.sm, marginTop: spacing.md },
+    row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+    selectionRing: { borderWidth: 2, borderRadius: radii.pill },
+  });
 
   return (
     <>
@@ -48,9 +53,3 @@ export default function StoreSelector({ stores, selectedStore, onSelect }: Props
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  label: { fontSize: Typography.body, fontWeight: '500', marginBottom: Spacing.sm, marginTop: Spacing.md },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.md },
-  selectionRing: { borderWidth: 2, borderRadius: Radii.pill },
-});

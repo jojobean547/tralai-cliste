@@ -23,6 +23,10 @@ export type PriceEntry = {
   created_at: string;
   confirms: number;
   flags: number;
+  club_card_price?: number | null;
+  club_card_name?: string | null;
+  deal?: string | null;
+  deal_price?: number | null;
 };
 
 export type Product = {
@@ -38,6 +42,10 @@ export type PriceSubmission = {
   product_name: string;
   store_name: string;
   price: number;
+  club_card_price?: number | null;
+  club_card_name?: string | null;
+  deal?: string | null;
+  deal_price?: number | null;
 };
 
 export type AiPriceResult = {

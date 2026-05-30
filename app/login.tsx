@@ -18,7 +18,6 @@
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { useState } from 'react';
@@ -27,7 +26,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
   const { signInWithGoogle, continueAsGuest } = useAuth();
-  const { colors } = useTheme();
+  const { colors, isDark, typography, spacing, radii } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,15 +42,40 @@ export default function LoginScreen() {
     }
   };
 
+  const styles = StyleSheet.create({
+    safe:           { flex: 1 },
+    container:      { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+    logoContainer:  { alignItems: 'center', marginBottom: spacing.xl },
+    logoBox:        { width: 160, height: 160, borderRadius: radii.lg, borderWidth: 2, borderColor: isDark ? colors.buttonPrimary : colors.primaryGreen, backgroundColor: isDark ? 'transparent' : colors.greenTint, justifyContent: 'center', alignItems: 'center', marginBottom: spacing.md, overflow: 'hidden' },
+    logoImage:      { width: 160, height: 160 },
+    appName:        { fontSize: typography.heading1, fontWeight: typography.bold, fontFamily: 'Inter', marginBottom: spacing.xs },
+    taglineIrish:   { fontSize: typography.bodySmall, fontStyle: 'italic', marginBottom: 2, textAlign: 'center' },
+    taglineEn:      { fontSize: typography.caption, textAlign: 'center' },
+    featuresCard:   { width: '100%', marginBottom: spacing.xl, gap: spacing.sm },
+    featureRow:     { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    featureIcon:    { fontSize: typography.body },
+    featureText:    { fontSize: typography.body, flex: 1 },
+    error:          { fontSize: typography.bodySmall, marginBottom: spacing.md, textAlign: 'center' },
+    buttonSpacing:  { marginBottom: spacing.md },
+    googleBtnInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    googleIconCircle: { width: 24, height: 24, borderRadius: radii.full, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
+    googleIconText: { fontSize: typography.bodySmall, fontWeight: typography.bold, fontFamily: 'Inter' },
+    googleBtnText:  { fontSize: typography.body, fontWeight: typography.semibold, fontFamily: 'Inter', color: '#FFFFFF' },
+    note:           { fontSize: typography.caption, textAlign: 'center', lineHeight: 18 },
+  });
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
 
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <View style={[styles.logoBox, { backgroundColor: colors.greenLight, borderColor: colors.borderStrong }]}>
+          <View style={styles.logoBox}>
             <Image
-              source={require('@/assets/images/tralai_cliste_app_logo_outline_no_bg.png')}
+              source={
+                isDark
+                  ? require('@/assets/images/app_icon_dark.png')
+                  : require('@/assets/images/app_icon_light.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -78,7 +102,6 @@ export default function LoginScreen() {
 
         {!!error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
 
-        {/* Sign in with Google */}
         <Button variant="primary" onPress={handleGoogleSignIn} loading={loading} style={styles.buttonSpacing}>
           {!loading && (
             <View style={styles.googleBtnInner}>
@@ -90,7 +113,6 @@ export default function LoginScreen() {
           )}
         </Button>
 
-        {/* Continue as Guest */}
         <Button variant="secondary" onPress={continueAsGuest} style={styles.buttonSpacing}>
           Continue as Guest
         </Button>
@@ -103,25 +125,3 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl },
-  logoContainer: { alignItems: 'center', marginBottom: Spacing.xl },
-  logoBox: { width: 160, height: 160, borderRadius: Radii.lg, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.md },
-  logoImage: { width: 240, height: 240 },
-  appName: { fontSize: Typography.heading1, fontWeight: Typography.bold, fontFamily: 'Inter', marginBottom: Spacing.xs },
-  taglineIrish: { fontSize: Typography.bodySmall, fontStyle: 'italic', marginBottom: 2, textAlign: 'center' },
-  taglineEn: { fontSize: Typography.caption, textAlign: 'center' },
-  featuresCard: { width: '100%', marginBottom: Spacing.xl, gap: Spacing.sm },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  featureIcon: { fontSize: Typography.body },
-  featureText: { fontSize: Typography.body, flex: 1 },
-  error: { fontSize: Typography.bodySmall, marginBottom: Spacing.md, textAlign: 'center' },
-  buttonSpacing: { marginBottom: Spacing.md },
-  googleBtnInner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  googleIconCircle: { width: 24, height: 24, borderRadius: Radii.full, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
-  googleIconText: { fontSize: Typography.bodySmall, fontWeight: Typography.bold, fontFamily: 'Inter' },
-  googleBtnText: { fontSize: Typography.body, fontWeight: Typography.semibold, fontFamily: 'Inter', color: '#FFFFFF' },
-  note: { fontSize: Typography.caption, textAlign: 'center', lineHeight: 18 },
-});
