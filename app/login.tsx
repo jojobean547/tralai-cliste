@@ -72,10 +72,7 @@ export default function LoginScreen() {
         <View style={styles.logoContainer}>
           <View style={styles.logoBox}>
             <Image
-              source={
-                isDark
-                  ? require('@/assets/images/app_icon_dark.png')
-                  : require('@/assets/images/app_icon_light.png')}
+              source={require('@/assets/images/app_icon_dark.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />

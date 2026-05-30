@@ -112,10 +112,7 @@ export default function BasketScreen() {
         {/* Fixed header */}
         <View style={styles.header}>
           <Image
-              source={
-                isDark
-                  ? require('@/assets/images/app_icon_dark.png')
-                  : require('@/assets/images/app_icon_dark.png')}
+              source={require('@/assets/images/app_icon_dark.png')}
               style={styles.iconImage}
               resizeMode="contain"
           />

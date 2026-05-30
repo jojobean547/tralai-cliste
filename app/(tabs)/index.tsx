@@ -107,10 +107,7 @@ export default function HomeScreen() {
           <View style={[styles.header, { backgroundColor: colors.background }]}>
             <View style={styles.headerLeft}>
               <Image
-                source={
-                  isDark
-                    ? require('@/assets/images/app_icon_dark.png')
-                    : require('@/assets/images/app_icon_dark.png')}
+                source={require('@/assets/images/app_icon_dark.png')}
                 style={styles.logoImage}
               />
               <Text style={[styles.title, { color: colors.textPrimary }]}>Tralaí Cliste</Text>
@@ -204,7 +201,7 @@ export default function HomeScreen() {
               <Button
                 variant="ghost"
                 onPress={() => { resetScan(); setScanning(true); }}
-                style={[styles.scanBtnSpacing, { borderWidth: 2, borderColor: colors.buttonSecondary, backgroundColor: isDark ? 'transparent' : colors.greenTint }]}
+                style={{ marginTop: spacing.sm, borderWidth: 2, borderColor: colors.buttonSecondary, backgroundColor: isDark ? 'transparent' : colors.greenTint }}
               >
                 <Text style={[styles.scanBtnLabel, { color: colors.buttonSecondary }]}>
                   {product ? 'Scan Another Product' : 'Scan a Product'}

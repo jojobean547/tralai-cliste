@@ -124,10 +124,7 @@ export default function SettingsScreen() {
           ) : (
             <View style={styles.profileRow}>
               <Image
-                source={
-                  isDark
-                    ? require('@/assets/images/app_icon_dark.png')
-                    : require('@/assets/images/app_icon_dark.png')}
+                source={require('@/assets/images/app_icon_dark.png')}
                 style={styles.profileIcon}
                 resizeMode="contain"
               />

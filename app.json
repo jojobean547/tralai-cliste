@@ -4,7 +4,7 @@
     "slug": "tralai-cliste",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/app_icon_light.png",
+    "icon": "./assets/images/app_icon_dark.png",
     "scheme": "basepricechecker",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,7 +15,7 @@
       "package": "ie.tralaicliste.app",
       "adaptiveIcon": {
         "backgroundColor": "#e4fade",
-        "foregroundImage": "./assets/images/app_icon_light.png",
+        "foregroundImage": "./assets/images/app_icon_dark.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -31,7 +31,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/app_icon_light",
+          "image": "./assets/images/app_icon_dark",
           "imageWidth": 500,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
