@@ -16,10 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import StoreSelector from '@/components/StoreSelector';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { STORES } from '@/constants/stores';
+import { StoreBadge } from '@/components/ui/StoreBadge';
 import { TouchTargets } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { Product } from '@/types/index';
@@ -34,7 +33,6 @@ type Props = {
   onScanTag: () => void;
   aiLoading: boolean;
   selectedStore: string;
-  onStoreSelect: (s: string) => void;
   onSubmit: () => void;
   saving: boolean;
   hasClubCard: boolean;
@@ -47,7 +45,7 @@ type Props = {
 
 export default function ProductCard({
   product, price, onPriceChange, onScanTag,
-  aiLoading, selectedStore, onStoreSelect, onSubmit, saving,
+  aiLoading, selectedStore, onSubmit, saving,
   hasClubCard, onToggleClubCard, clubCardPrice, onClubCardPriceChange,
   clubCardName, onClubCardNameChange,
 }: Props) {
@@ -72,6 +70,7 @@ export default function ProductCard({
     pillRow:            { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm },
     pill:               { borderWidth: 1.5, borderRadius: radii.pill, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
     pillLabel:          { fontSize: typography.tiny, fontWeight: '600', fontFamily: 'Inter' },
+    storeRow:           { marginBottom: spacing.md },
   });
 
   return (
@@ -88,6 +87,11 @@ export default function ProductCard({
       {!!product.quantity && (
         <Text style={[styles.quantity, { color: colors.textSecondary }]}>{product.quantity}</Text>
       )}
+
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Submitting for</Text>
+      <View style={styles.storeRow}>
+        <StoreBadge store={selectedStore} />
+      </View>
 
       <Text style={[styles.label, { color: colors.textSecondary }]}>What's the price? (€)</Text>
       <TextInput
@@ -159,12 +163,6 @@ export default function ProductCard({
           </View>
         </View>
       )}
-
-      <StoreSelector
-        stores={STORES}
-        selectedStore={selectedStore}
-        onSelect={onStoreSelect}
-      />
 
       <Button
         variant="ghost"

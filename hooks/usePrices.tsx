@@ -102,7 +102,6 @@ export function usePrices() {
     setError('');
     setProduct(null);
     setPrice('');
-    setSelectedStore('');
     setSubmitted(false);
     setDealQuantity(1);
     setPriceEntries([]);
@@ -416,7 +415,6 @@ export function usePrices() {
     setSubmitted(false);
     setPriceEntries([]);
     setPrice('');
-    setSelectedStore('');
     setDealQuantity(1);
     setDealTotal(null);
     setDealPrice(null);

@@ -16,12 +16,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { useState } from 'react';
+import { MixedDealModal } from '@/components/MixedDealModal';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAlert } from '@/hooks/useAlert';
-import { useBasket } from '@/hooks/useBasket';
+import { useBasket, type MixedDealGroup } from '@/hooks/useBasket';
 import { useTheme } from '@/hooks/useTheme';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useRouter } from 'expo-router';
@@ -36,8 +38,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BasketScreen() {
-  const { basket, removeItem, updateQuantity, clearBasket, total, itemCount } = useBasket();
+  const { basket, removeItem, updateQuantity, clearBasket, total, itemCount, mixedDealGroups, getMixedDealPriceForItem } = useBasket();
   const { colors, isDark, typography, spacing, radii } = useTheme();
+  const [activeGroup, setActiveGroup] = useState<MixedDealGroup | null>(null);
+  const mixedSaving = mixedDealGroups.reduce((sum, g) => sum + g.totalSaving, 0);
   const { showAlert, alertProps } = useAlert();
   const { hasClubCard } = useUserPreferences();
   const router = useRouter();
@@ -82,6 +86,11 @@ export default function BasketScreen() {
     totalRow:             { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
     totalLabel:           { fontSize: typography.heading3 },
     totalAmount:          { fontSize: 36, fontWeight: '700', fontFamily: 'Inter' },
+    mixedBanner:          { borderWidth: 1.5, borderColor: colors.accentGold, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, backgroundColor: isDark ? '#F2B70510' : '#F2B70520' },
+    mixedBannerTitle:     { fontSize: typography.body, fontWeight: '700', fontFamily: 'Inter', color: colors.textPrimary, marginBottom: 2 },
+    mixedBannerSub:       { fontSize: typography.bodySmall, fontFamily: 'Inter', color: colors.accentGold, marginBottom: 2 },
+    mixedBannerCta:       { fontSize: typography.caption, fontFamily: 'Inter', color: colors.accentGold },
+    savingsLabel:         { fontSize: typography.bodySmall, fontWeight: '700', fontFamily: 'Inter', textAlign: 'right', marginBottom: spacing.xs },
   });
 
   if (basket.length === 0) {
@@ -126,6 +135,29 @@ export default function BasketScreen() {
           style={styles.list}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            mixedDealGroups.length > 0 ? (
+              <View>
+                {mixedDealGroups.map(group => (
+                  <TouchableOpacity
+                    key={group.id}
+                    style={styles.mixedBanner}
+                    onPress={() => setActiveGroup(group)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.mixedBannerTitle}>🏷️ {group.dealText} — {group.store}</Text>
+                    <Text style={styles.mixedBannerSub}>
+                      {group.dealType === 'quantity'
+                        ? `${group.freeItems.length} item${group.freeItems.length !== 1 ? 's' : ''} free · saving €${group.totalSaving.toFixed(2)}`
+                        : `saving €${group.totalSaving.toFixed(2)}`
+                      }
+                    </Text>
+                    <Text style={styles.mixedBannerCta}>Tap to see details →</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <Card style={styles.itemCard}>
               <View style={styles.itemRow}>
@@ -148,6 +180,38 @@ export default function BasketScreen() {
                     </View>
                   )}
                   {(() => {
+                    const mixedInfo = getMixedDealPriceForItem(item);
+                    if (mixedInfo) {
+                      return (
+                        <>
+                          <View style={styles.dealPriceRow}>
+                            <Text style={[styles.regularPrice, { color: colors.textSecondary }]}>
+                              €{(item.price * item.quantity).toFixed(2)}
+                            </Text>
+                            <Text style={[styles.dealArrow, { color: colors.textSecondary }]}>→</Text>
+                            <Text style={[styles.dealFinalPrice, { color: colors.primaryGreen }]}>
+                              €{mixedInfo.effectiveTotal.toFixed(2)}
+                            </Text>
+                          </View>
+                          {mixedInfo.dealType === 'price' && (
+                            <Text style={[styles.dealHint, { color: colors.accentGold }]}>
+                              {mixedInfo.leftoverUnits > 0
+                                ? `${mixedInfo.dealUnits} unit${mixedInfo.dealUnits !== 1 ? 's' : ''} in deal · ${mixedInfo.leftoverUnits} at full price`
+                                : 'Part of deal'
+                              }
+                            </Text>
+                          )}
+                          {mixedInfo.dealType === 'quantity' && mixedInfo.dealUnits > 0 && (
+                            <View style={styles.dealBadge}>
+                              <Text style={styles.dealBadgeText}>
+                                🎁 {mixedInfo.dealUnits} item{mixedInfo.dealUnits !== 1 ? 's' : ''} free
+                              </Text>
+                            </View>
+                          )}
+                        </>
+                      );
+                    }
+
                     const dealLower = item.deal?.toLowerCase() ?? '';
                     const isThreeForTwo = dealLower.includes('for 2') || dealLower.includes('get 1 free');
 
@@ -297,6 +361,11 @@ export default function BasketScreen() {
 
         {/* Fixed footer */}
         <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.surface }]}>
+          {mixedSaving > 0 && (
+            <Text style={[styles.savingsLabel, { color: colors.primaryGreen }]}>
+              🏷️ Saving €{mixedSaving.toFixed(2)} on deals
+            </Text>
+          )}
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>
               {itemCount} item{itemCount !== 1 ? 's' : ''}
@@ -322,6 +391,11 @@ export default function BasketScreen() {
 
       </View>
       <AppAlert {...alertProps} />
+      <MixedDealModal
+        group={activeGroup}
+        visible={activeGroup !== null}
+        onClose={() => setActiveGroup(null)}
+      />
     </SafeAreaView>
   );
 }

@@ -56,11 +56,12 @@ export default function LoginScreen() {
     featureIcon:    { fontSize: typography.body },
     featureText:    { fontSize: typography.body, flex: 1 },
     error:          { fontSize: typography.bodySmall, marginBottom: spacing.md, textAlign: 'center' },
-    buttonSpacing:  { marginBottom: spacing.md },
+    googleBtn:      { backgroundColor: isDark ? 'transparent' : colors.greenTint, borderColor: isDark ? colors.buttonPrimary : colors.primaryGreen, borderWidth: 2, marginBottom: spacing.md },
+    guestBtn:       { backgroundColor: isDark ? 'transparent' : colors.surface, marginBottom: spacing.md },
     googleBtnInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     googleIconCircle: { width: 24, height: 24, borderRadius: radii.full, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
-    googleIconText: { fontSize: typography.bodySmall, fontWeight: typography.bold, fontFamily: 'Inter' },
-    googleBtnText:  { fontSize: typography.body, fontWeight: typography.semibold, fontFamily: 'Inter', color: '#FFFFFF' },
+    googleIconText: { fontSize: typography.bodySmall, fontWeight: '700', fontFamily: 'Inter' },
+    googleBtnText:  { fontSize: typography.body, fontWeight: '700', fontFamily: 'Inter', color: isDark ? colors.buttonPrimary : colors.primaryGreen },
     note:           { fontSize: typography.caption, textAlign: 'center', lineHeight: 18 },
   });
 
@@ -99,18 +100,18 @@ export default function LoginScreen() {
 
         {!!error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
 
-        <Button variant="primary" onPress={handleGoogleSignIn} loading={loading} style={styles.buttonSpacing}>
+        <Button variant="secondary" onPress={handleGoogleSignIn} loading={loading} style={styles.googleBtn}>
           {!loading && (
             <View style={styles.googleBtnInner}>
               <View style={styles.googleIconCircle}>
-                <Text style={[styles.googleIconText, { color: colors.primaryGreen }]}>G</Text>
+                <Text style={[styles.googleIconText, { color: isDark ? colors.buttonPrimary : colors.primaryGreen }]}>G</Text>
               </View>
               <Text style={styles.googleBtnText}>Sign in with Google</Text>
             </View>
           )}
         </Button>
 
-        <Button variant="secondary" onPress={continueAsGuest} style={styles.buttonSpacing}>
+        <Button variant="secondary" onPress={continueAsGuest} style={styles.guestBtn}>
           Continue as Guest
         </Button>
 

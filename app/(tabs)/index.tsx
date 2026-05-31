@@ -20,21 +20,26 @@ import OfflineBanner from '@/components/OfflineBanner';
 import PriceList from '@/components/PriceList';
 import ProductCard from '@/components/ProductCard';
 import ProductSummary from '@/components/ProductSummary';
+import StoreSelector from '@/components/StoreSelector';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { StoreBadge } from '@/components/ui/StoreBadge';
+import { STORES } from '@/constants/stores';
 import { useNetwork } from '@/hooks/useNetwork';
 import { usePrices } from '@/hooks/usePrices';
 import { useTheme } from '@/hooks/useTheme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator, Image, KeyboardAvoidingView,
-  Platform, ScrollView, StyleSheet, Text, View,
+  Platform, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const [scanning, setScanning] = useState(false);
+  const [storeValidationError, setStoreValidationError] = useState<string | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const { isOnline } = useNetwork();
   const { colors, typography, spacing, radii, isDark } = useTheme();
@@ -47,6 +52,22 @@ export default function HomeScreen() {
     handleScanPriceTag, handleAddToBasket, handlePriceChange, resetScan,
     alertProps,
   } = usePrices();
+
+  const handleStoreSelect = useCallback((store: string) => {
+    setSelectedStore(store);
+    setStoreValidationError(null);
+  }, [setSelectedStore]);
+
+  const handleClearStore = useCallback(() => {
+    resetScan();
+    setSelectedStore('');
+  }, [resetScan, setSelectedStore]);
+
+  const handleSubmitWithStoreCheck = useCallback(() => {
+    if (!selectedStore) { setStoreValidationError('Please select a store above'); return; }
+    setStoreValidationError(null);
+    handleSubmitPrice();
+  }, [selectedStore, handleSubmitPrice]);
 
   const styles = StyleSheet.create({
     safe:           { flex: 1 },
@@ -72,6 +93,11 @@ export default function HomeScreen() {
     successText:    { fontSize: typography.body, textAlign: 'center' },
     scanBtnSpacing: { marginTop: spacing.sm },
     scanBtnLabel:   { fontSize: typography.body, fontWeight: '700', fontFamily: 'Inter' },
+    scanningLabel:  { fontSize: typography.bodySmall, fontWeight: '500', marginBottom: spacing.xs },
+    storeIndicatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+    changeStoreText:   { fontSize: typography.bodySmall, fontFamily: 'Inter' },
+    storeOverlay:   { position: 'absolute', bottom: spacing.xxl, alignSelf: 'center' },
+    storeError:     { fontSize: typography.bodySmall, textAlign: 'center', marginBottom: spacing.sm },
   });
 
   if (!permission) return <View style={[styles.safe, { backgroundColor: colors.background }]} />;
@@ -99,6 +125,12 @@ export default function HomeScreen() {
           onBarcodeScanned={({ data }) => { setScanning(false); lookUpProduct(data); }}
           barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8'] }}
         />
+      )}
+
+      {scanning && !!selectedStore && (
+        <View style={styles.storeOverlay}>
+          <StoreBadge store={selectedStore} />
+        </View>
       )}
 
       {!scanning && (
@@ -130,6 +162,26 @@ export default function HomeScreen() {
               <OfflineBanner isOnline={isOnline} />
 
               {!product && !loading && (
+                <Card style={{ marginBottom: spacing.md }}>
+                  <Text style={[styles.scanningLabel, { color: colors.textSecondary }]}>Scanning in store</Text>
+                  <StoreSelector
+                    stores={STORES}
+                    selectedStore={selectedStore}
+                    onSelect={handleStoreSelect}
+                  />
+                </Card>
+              )}
+
+              {!!selectedStore && (
+                <View style={styles.storeIndicatorRow}>
+                  <StoreBadge store={selectedStore} />
+                  <Pressable onPress={handleClearStore} hitSlop={8}>
+                    <Text style={[styles.changeStoreText, { color: colors.textSecondary }]}>Change</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {!product && !loading && (
                 <View style={[styles.scanArea, { backgroundColor: colors.surfaceAlt, borderColor: colors.primaryGreen }]}>
                   <Text style={styles.scanIcon}>⬚</Text>
                   <Text style={[styles.scanText, { color: colors.textSecondary }]}>
@@ -152,23 +204,27 @@ export default function HomeScreen() {
               )}
 
               {!!product && !submitted && (
-                <ProductCard
-                  product={product}
-                  price={price}
-                  onPriceChange={handlePriceChange}
-                  onScanTag={handleScanPriceTag}
-                  aiLoading={aiLoading}
-                  selectedStore={selectedStore}
-                  onStoreSelect={setSelectedStore}
-                  onSubmit={handleSubmitPrice}
-                  saving={saving}
-                  hasClubCard={hasClubCard}
-                  onToggleClubCard={() => setHasClubCard(v => !v)}
-                  clubCardPrice={clubCardPrice}
-                  onClubCardPriceChange={setClubCardPrice}
-                  clubCardName={clubCardName}
-                  onClubCardNameChange={setClubCardName}
-                />
+                <>
+                  {!!storeValidationError && (
+                    <Text style={[styles.storeError, { color: colors.error }]}>{storeValidationError}</Text>
+                  )}
+                  <ProductCard
+                    product={product}
+                    price={price}
+                    onPriceChange={handlePriceChange}
+                    onScanTag={handleScanPriceTag}
+                    aiLoading={aiLoading}
+                    selectedStore={selectedStore}
+                    onSubmit={handleSubmitWithStoreCheck}
+                    saving={saving}
+                    hasClubCard={hasClubCard}
+                    onToggleClubCard={() => setHasClubCard(v => !v)}
+                    clubCardPrice={clubCardPrice}
+                    onClubCardPriceChange={setClubCardPrice}
+                    clubCardName={clubCardName}
+                    onClubCardNameChange={setClubCardName}
+                  />
+                </>
               )}
 
               {submitted && (

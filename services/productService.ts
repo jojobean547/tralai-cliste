@@ -26,6 +26,28 @@ const OFF_DATABASES = [
   'world.openproductsfacts.org',
 ];
 
+function toTitleCase(str: string): string {
+  if (!str) return str;
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getBestProductName(product: any): string {
+  const name =
+    product.product_name_en ||
+    product.product_name_en_gb ||
+    product.product_name_en_ie ||
+    product.product_name ||
+    product.generic_name_en ||
+    product.generic_name ||
+    '';
+  return toTitleCase(name);
+}
+
 async function queryDatabase(
   host: string,
   barcode: string
@@ -50,7 +72,11 @@ async function queryDatabase(
   }
 
   if (data.status !== 1) return null;
-  return { ...data.product, barcode };
+  return {
+    ...data.product,
+    barcode,
+    product_name: getBestProductName(data.product),
+  };
 }
 
 export async function fetchProduct(barcode: string): Promise<Product | null> {
