@@ -176,9 +176,6 @@ export function usePrices() {
           product_name: product.product_name || 'Unknown',
           store_name: selectedStore,
           price: parsedPrice,
-          club_card_price: parsedClubCardPrice,
-          club_card_name: resolvedClubCardName,
-          deal: resolvedDeal,
         });
         setSubmitted(true);
         return;

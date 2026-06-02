@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/useTheme';
 import React from 'react';
 import {
   ActivityIndicator,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -37,7 +38,7 @@ interface ButtonProps {
   loading?: boolean;
   children: React.ReactNode;
   fullWidth?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 const HEIGHT: Record<Size, number> = {

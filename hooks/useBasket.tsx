@@ -39,7 +39,7 @@ export type DealPriceInfo = {
 
 type BasketContextType = {
   basket: BasketItem[];
-  addItem: (item: Omit<BasketItem, 'quantity'>) => void;
+  addItem: (item: Omit<BasketItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (barcode: string, store_name: string) => void;
   updateQuantity: (barcode: string, store_name: string, quantity: number) => void;
   clearBasket: () => void;
