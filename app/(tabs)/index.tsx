@@ -122,7 +122,7 @@ export default function HomeScreen() {
             We need camera permission to scan barcodes
           </Text>
           <Button variant="primary" onPress={requestPermission}>
-            Grant Permission
+            Grant Camera Permission
           </Button>
         </View>
       </SafeAreaView>
