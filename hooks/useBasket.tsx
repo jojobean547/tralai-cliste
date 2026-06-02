@@ -233,7 +233,7 @@ export function BasketProvider({ children }: { children: ReactNode }) {
   const clearBasket = () => setBasket([]);
 
   const getEffectivePrice = (item: BasketItem): number => {
-    if (item.club_card_price && item.club_card_name && hasClubCard(item.club_card_name)) {
+    if (item.club_card_price != null && item.club_card_name && hasClubCard(item.club_card_name)) {
       return item.club_card_price * item.quantity;
     }
     const deal = item.deal?.toLowerCase() ?? '';
@@ -243,7 +243,7 @@ export function BasketProvider({ children }: { children: ReactNode }) {
       const paidItems = item.quantity - freeItems;
       return item.price * paidItems;
     }
-    if (item.deal && item.dealTotal && item.quantity >= 3) return item.dealTotal;
+    if (item.deal && item.dealTotal != null && item.quantity >= 3) return item.dealTotal;
     return item.price * item.quantity;
   };
 

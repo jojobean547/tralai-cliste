@@ -40,6 +40,10 @@ Rules:
 - Respond with JSON only, no other text`;
 
 export async function scanPriceTag(base64Image: string): Promise<AiPriceResult> {
+  if (!API_KEY) {
+    throw new Error('AI scanning is not available. Please contact support.');
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 

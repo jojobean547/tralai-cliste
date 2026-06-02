@@ -113,7 +113,7 @@ export function useProductCache() {
          (id, barcode, product_name, store_name, price, created_at)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [
-          String(Date.now()),
+          Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 9),
           submission.barcode,
           submission.product_name,
           submission.store_name,

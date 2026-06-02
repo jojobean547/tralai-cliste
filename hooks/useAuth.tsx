@@ -96,7 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await GoogleSignin.signOut();
+    if (GoogleSignin && user) {
+      try { await GoogleSignin.signOut(); } catch {}
+    }
     await supabase.auth.signOut();
     setUser(null);
     setIsGuest(false);

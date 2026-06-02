@@ -134,7 +134,7 @@ export default function HomeScreen() {
       {scanning && (
         <CameraView
           style={StyleSheet.absoluteFill}
-          onBarcodeScanned={({ data }) => { setScanning(false); lookUpProduct(data); }}
+          onBarcodeScanned={({ data }) => { setScanning(false); void lookUpProduct(data); }}
           barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8'] }}
         />
       )}

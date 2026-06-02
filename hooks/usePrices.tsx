@@ -76,19 +76,21 @@ export function usePrices() {
     const pending = getPendingSubmissions() as PendingSubmission[];
     if (pending.length === 0) return;
 
-    pending.forEach(async (sub) => {
-      try {
-        await submitPrice({
-          barcode: sub.barcode,
-          product_name: sub.product_name,
-          store_name: sub.store_name,
-          price: sub.price,
-        });
-        removePendingSubmission(sub.id);
-      } catch {
-        // Leave in queue for next sync attempt
+    (async () => {
+      for (const sub of pending) {
+        try {
+          await submitPrice({
+            barcode: sub.barcode,
+            product_name: sub.product_name,
+            store_name: sub.store_name,
+            price: sub.price,
+          });
+          removePendingSubmission(sub.id);
+        } catch {
+          // Leave in queue for next sync attempt
+        }
       }
-    });
+    })();
   }, [isOnline]);
 
   // ─── Product + price lookup ────────────────────────────────────────────────
@@ -166,7 +168,7 @@ export function usePrices() {
     try {
       const parsedClubCardPrice = hasClubCard && clubCardPrice ? parseFloat(clubCardPrice) : null;
       const resolvedClubCardName = hasClubCard && clubCardName ? clubCardName : null;
-      const resolvedDeal = dealTotal && dealText ? dealText : null;
+      const resolvedDeal = dealTotal !== null && dealText ? dealText : null;
 
       if (!isOnline) {
         addPendingSubmission({
@@ -207,6 +209,11 @@ export function usePrices() {
   };
 
   const handleSubmitPrice = () => {
+    if (isGuest) {
+      setError('Please sign in to submit prices');
+      return;
+    }
+
     if (!price || !selectedStore) {
       setError('Please enter a price and select a store');
       return;
@@ -320,6 +327,9 @@ export function usePrices() {
 
     try {
       const priceData = await scanPriceTag(result.assets[0].base64);
+      if (typeof priceData.single_price !== 'number' || !isFinite(priceData.single_price) || priceData.single_price <= 0) {
+        throw new Error('Could not read a valid price from this image. Please try again or enter manually.');
+      }
       setPrice(String(priceData.single_price));
       if (priceData.has_deal && priceData.deal) setDealText(priceData.deal);
 
@@ -349,7 +359,7 @@ export function usePrices() {
                     priceData.single_price
                   );
                   const safeQuantity = Math.min(quantity, 20); // Bug #16: cap AI-returned quantity
-                  setPrice(String(priceData.single_price));
+                  setPrice(String(priceData.deal_price_per_item));
                   setDealPrice(priceData.deal_price_per_item);
                   setDealQuantity(safeQuantity);
                   setDealTotal(totalPrice);
@@ -392,7 +402,7 @@ export function usePrices() {
       store_name: entry.store_name,
       price: entry.price,
       quantity: dealQuantity,
-      dealTotal: dealTotal || undefined,
+      dealTotal: dealTotal ?? undefined,
       deal: entry.deal ?? null,
       club_card_price: entry.club_card_price ?? null,
       club_card_name: entry.club_card_name ?? null,
