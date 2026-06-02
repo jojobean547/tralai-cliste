@@ -40,6 +40,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function HomeScreen() {
   const [scanning, setScanning] = useState(false);
   const [storeValidationError, setStoreValidationError] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const { isOnline } = useNetwork();
   const { colors, typography, spacing, radii, isDark } = useTheme();
@@ -56,18 +57,29 @@ export default function HomeScreen() {
   const handleStoreSelect = useCallback((store: string) => {
     setSelectedStore(store);
     setStoreValidationError(null);
+    setScanError(null);
   }, [setSelectedStore]);
 
   const handleClearStore = useCallback(() => {
     resetScan();
     setSelectedStore('');
+    setStoreValidationError(null);
+    setScanError(null);
   }, [resetScan, setSelectedStore]);
 
-  const handleSubmitWithStoreCheck = useCallback(() => {
+  const handleScanAttempt = () => {
+    if (!selectedStore) { setScanError('Please select a store to start scanning'); return; }
+    setScanError(null);
+    resetScan();
+    setStoreValidationError(null);
+    setScanning(true);
+  };
+
+  const handleSubmitWithStoreCheck = () => {
     if (!selectedStore) { setStoreValidationError('Please select a store above'); return; }
     setStoreValidationError(null);
     handleSubmitPrice();
-  }, [selectedStore, handleSubmitPrice]);
+  };
 
   const styles = StyleSheet.create({
     safe:           { flex: 1 },
@@ -172,7 +184,13 @@ export default function HomeScreen() {
                 </Card>
               )}
 
-              {!!selectedStore && (
+              {!!scanError && !product && !loading && (
+                <View style={[styles.errorBox, { backgroundColor: colors.errorBg, borderColor: colors.error }]}>
+                  <Text style={[styles.error, { color: colors.error }]}>{scanError}</Text>
+                </View>
+              )}
+
+              {!!selectedStore && !loading && (
                 <View style={styles.storeIndicatorRow}>
                   <StoreBadge store={selectedStore} />
                   <Pressable onPress={handleClearStore} hitSlop={8}>
@@ -182,12 +200,12 @@ export default function HomeScreen() {
               )}
 
               {!product && !loading && (
-                <View style={[styles.scanArea, { backgroundColor: colors.surfaceAlt, borderColor: colors.primaryGreen }]}>
+                <Pressable onPress={handleScanAttempt} style={[styles.scanArea, { backgroundColor: colors.surfaceAlt, borderColor: colors.primaryGreen }]}>
                   <Text style={styles.scanIcon}>⬚</Text>
                   <Text style={[styles.scanText, { color: colors.textSecondary }]}>
                     Point camera at barcode or price tag
                   </Text>
-                </View>
+                </Pressable>
               )}
 
               {loading && (
@@ -256,7 +274,7 @@ export default function HomeScreen() {
 
               <Button
                 variant="ghost"
-                onPress={() => { resetScan(); setScanning(true); }}
+                onPress={handleScanAttempt}
                 style={{ marginTop: spacing.sm, borderWidth: 2, borderColor: colors.buttonSecondary, backgroundColor: isDark ? 'transparent' : colors.greenTint }}
               >
                 <Text style={[styles.scanBtnLabel, { color: colors.buttonSecondary }]}>

@@ -88,10 +88,14 @@ export default function ProductCard({
         <Text style={[styles.quantity, { color: colors.textSecondary }]}>{product.quantity}</Text>
       )}
 
-      <Text style={[styles.label, { color: colors.textSecondary }]}>Submitting for</Text>
-      <View style={styles.storeRow}>
-        <StoreBadge store={selectedStore} />
-      </View>
+      {!!selectedStore && (
+        <>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Submitting for</Text>
+          <View style={styles.storeRow}>
+            <StoreBadge store={selectedStore} />
+          </View>
+        </>
+      )}
 
       <Text style={[styles.label, { color: colors.textSecondary }]}>What's the price? (€)</Text>
       <TextInput

@@ -32,7 +32,7 @@ import {
 import { fetchProduct } from '@/services/productService';
 import { PriceEntry, PriceSubmission, Product } from '@/types/index';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type PendingSubmission = PriceSubmission & { id: string };
 
@@ -409,7 +409,7 @@ export function usePrices() {
 
   // ─── Reset ─────────────────────────────────────────────────────────────────
 
-  const resetScan = () => {
+  const resetScan = useCallback(() => {
     setProduct(null);
     setError('');
     setSubmitted(false);
@@ -422,7 +422,9 @@ export function usePrices() {
     setClubCardPrice('');
     setClubCardName('');
     setDealText('');
-  };
+    scanInProgressRef.current = false;
+    setAiLoading(false);
+  }, []);
 
   const handlePriceChange = (text: string) => {
     setPrice(text);
