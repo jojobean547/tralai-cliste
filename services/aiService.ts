@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import Constants from 'expo-constants';
 import { AiPriceResult } from '@/types/index';
 
-const API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY || '';
+const API_KEY: string = (Constants.expoConfig?.extra?.anthropicApiKey as string) ?? '';
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const TIMEOUT_MS = 15_000;
 
