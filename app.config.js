@@ -48,9 +48,9 @@ module.exports = {
       reactCompiler: true,
     },
     extra: {
-      supabaseUrl: process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL,
-      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-      anthropicApiKey: process.env.ANTHROPIC_API_KEY || process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY,
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      anthropicApiKey: process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY,
       router: {},
       eas: {
         projectId: "cd596fef-df50-4e95-b85e-f7c0d35b01ec",
