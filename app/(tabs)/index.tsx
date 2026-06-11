@@ -26,91 +26,45 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StoreBadge } from '@/components/ui/StoreBadge';
 import { STORES } from '@/constants/stores';
+import { Radii, Spacing, Typography } from '@/constants/theme';
 import { useNetwork } from '@/hooks/useNetwork';
 import { usePrices } from '@/hooks/usePrices';
+import { useScanScreen } from '@/hooks/useScanScreen';
 import { useTheme } from '@/hooks/useTheme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useCallback, useState } from 'react';
 import {
   ActivityIndicator, Image, KeyboardAvoidingView,
   Platform, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
-  const [scanning, setScanning] = useState(false);
-  const [storeValidationError, setStoreValidationError] = useState<string | null>(null);
-  const [scanError, setScanError] = useState<string | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const { isOnline } = useNetwork();
-  const { colors, typography, spacing, radii, isDark } = useTheme();
+  const { colors, isDark, spacing } = useTheme();
+  const prices = usePrices();
   const {
-    priceEntries, product, price, selectedStore, setSelectedStore,
-    submitted, saving, aiLoading, error, loading,
-    hasClubCard, setHasClubCard, clubCardPrice, setClubCardPrice,
-    clubCardName, setClubCardName,
-    lookUpProduct, handleSubmitPrice, handleConfirmPrice, handleFlagPrice,
-    handleScanPriceTag, handleAddToBasket, handlePriceChange, resetScan,
-    alertProps,
-  } = usePrices();
-
-  const handleStoreSelect = useCallback((store: string) => {
-    setSelectedStore(store);
-    setStoreValidationError(null);
-    setScanError(null);
-  }, [setSelectedStore]);
-
-  const handleClearStore = useCallback(() => {
-    resetScan();
-    setSelectedStore('');
-    setStoreValidationError(null);
-    setScanError(null);
-  }, [resetScan, setSelectedStore]);
-
-  const handleScanAttempt = () => {
-    if (!selectedStore) { setScanError('Please select a store to start scanning'); return; }
-    setScanError(null);
-    resetScan();
-    setStoreValidationError(null);
-    setScanning(true);
-  };
-
-  const handleSubmitWithStoreCheck = () => {
-    if (!selectedStore) { setStoreValidationError('Please select a store above'); return; }
-    setStoreValidationError(null);
-    handleSubmitPrice();
-  };
-
-  const styles = StyleSheet.create({
-    safe:           { flex: 1 },
-    centred:        { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl, gap: spacing.lg },
-    header:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
-    headerLeft:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    logoImage:      { width: 92, height: 92, borderRadius: 2 },
-    title:          { fontSize: typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
-    onlinePill:     { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.pill, borderWidth: 1 },
-    onlinePillText: { fontSize: typography.bodySmall, fontWeight: '600' },
-    scrollWrapper:  { flex: 1 },
-    scrollContent:  { flexGrow: 1, padding: spacing.xl },
-    scanArea:       { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: radii.lg, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg, minHeight: 160, justifyContent: 'center' },
-    scanIcon:       { fontSize: 40 },
-    scanText:       { fontSize: typography.body, textAlign: 'center' },
-    loadingRow:     { alignItems: 'center', gap: spacing.md, marginVertical: spacing.xl },
-    message:        { fontSize: typography.body, textAlign: 'center' },
-    errorBox:       { padding: spacing.md, borderRadius: radii.sm, marginBottom: spacing.md, borderWidth: 1 },
-    error:          { fontSize: typography.bodySmall, textAlign: 'center' },
-    noPricesBox:    { padding: spacing.md, borderRadius: radii.md, marginBottom: spacing.md, borderWidth: 1 },
-    noPricesText:   { fontSize: typography.bodySmall, textAlign: 'center' },
-    successBox:     { padding: spacing.lg, borderRadius: radii.md, marginBottom: spacing.xl, borderWidth: 1 },
-    successText:    { fontSize: typography.body, textAlign: 'center' },
-    scanBtnSpacing: { marginTop: spacing.sm },
-    scanBtnLabel:   { fontSize: typography.body, fontWeight: '700', fontFamily: 'Inter' },
-    scanningLabel:  { fontSize: typography.bodySmall, fontWeight: '500', marginBottom: spacing.xs },
-    storeIndicatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-    changeStoreText:   { fontSize: typography.bodySmall, fontFamily: 'Inter' },
-    storeOverlay:   { position: 'absolute', bottom: spacing.xxl, alignSelf: 'center' },
-    storeError:     { fontSize: typography.bodySmall, textAlign: 'center', marginBottom: spacing.sm },
+    scanning,
+    storeValidationError, scanError,
+    handleStoreSelect, handleClearStore,
+    handleScanAttempt, handleSubmitWithStoreCheck,
+    cancelScanning,
+  } = useScanScreen({
+    selectedStore: prices.selectedStore,
+    setSelectedStore: prices.setSelectedStore,
+    resetScan: prices.resetScan,
+    handleSubmitPrice: prices.handleSubmitPrice,
   });
+  const {
+    priceEntries, product, price, selectedStore,
+    submitted, saving, error, loading,
+    clubCardPrice, setClubCardPrice,
+    clubCardName, setClubCardName,
+    lookUpProduct, handleConfirmPrice, handleFlagPrice,
+    handleAddToBasket, handlePriceChange,
+    alertProps,
+  } = prices;
 
   if (!permission) return <View style={[styles.safe, { backgroundColor: colors.background }]} />;
 
@@ -132,17 +86,17 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       {scanning && (
-        <CameraView
-          style={StyleSheet.absoluteFill}
-          onBarcodeScanned={({ data }) => { setScanning(false); void lookUpProduct(data); }}
-          barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8'] }}
-        />
-      )}
-
-      {scanning && !!selectedStore && (
-        <View style={styles.storeOverlay}>
-          <StoreBadge store={selectedStore} />
-        </View>
+        <>
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            onBarcodeScanned={({ data }) => { cancelScanning(); void lookUpProduct(data); }}
+            barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8'] }}
+          />
+          <View style={styles.cameraControlsRow}>
+            {!!selectedStore && <StoreBadge store={selectedStore} />}
+            <Button variant="secondary" onPress={cancelScanning}>Cancel</Button>
+          </View>
+        </>
       )}
 
       {!scanning && (
@@ -221,66 +175,78 @@ export default function HomeScreen() {
                 </View>
               )}
 
-              {!!product && !submitted && (
+              {!!product && (
                 <>
                   {!!storeValidationError && (
                     <Text style={[styles.storeError, { color: colors.error }]}>{storeValidationError}</Text>
                   )}
-                  <ProductCard
-                    product={product}
-                    price={price}
-                    onPriceChange={handlePriceChange}
-                    onScanTag={handleScanPriceTag}
-                    aiLoading={aiLoading}
-                    selectedStore={selectedStore}
-                    onSubmit={handleSubmitWithStoreCheck}
-                    saving={saving}
-                    hasClubCard={hasClubCard}
-                    onToggleClubCard={() => setHasClubCard(v => !v)}
-                    clubCardPrice={clubCardPrice}
-                    onClubCardPriceChange={setClubCardPrice}
-                    clubCardName={clubCardName}
-                    onClubCardNameChange={setClubCardName}
+
+                  <ProductSummary product={product} />
+
+                  <PriceList
+                    entries={priceEntries}
+                    onConfirm={handleConfirmPrice}
+                    onFlag={handleFlagPrice}
+                    onAddToBasket={handleAddToBasket}
                   />
+
+                  {priceEntries.length === 0 && !loading && (
+                    <View style={[styles.noPricesBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderStrong }]}>
+                      <Text style={[styles.noPricesText, { color: colors.primaryGreen }]}>
+                        📭 No prices yet for this product — be the first!
+                      </Text>
+                    </View>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    onPress={handleScanAttempt}
+                    style={{ marginTop: spacing.sm, borderWidth: 2, borderColor: colors.buttonSecondary, backgroundColor: isDark ? 'transparent' : colors.greenTint }}
+                  >
+                    <Text style={[styles.scanBtnLabel, { color: colors.buttonSecondary }]}>
+                      Scan Another Product
+                    </Text>
+                  </Button>
+
+                  <Text style={[styles.separator, { color: colors.textSecondary }]}>
+                    See a different price?
+                  </Text>
+
+                  {submitted && (
+                    <View style={[styles.successBox, { backgroundColor: colors.infoBg, borderColor: colors.success }]}>
+                      <Text style={[styles.successText, { color: colors.success }]}>
+                        ✅ Price saved! Thank you for helping the community!
+                      </Text>
+                    </View>
+                  )}
+
+                  {!submitted && (
+                    <ProductCard
+                      price={price}
+                      onPriceChange={handlePriceChange}
+                      selectedStore={selectedStore}
+                      onSubmit={handleSubmitWithStoreCheck}
+                      saving={saving}
+                      clubCardPrice={clubCardPrice}
+                      onClubCardPriceChange={setClubCardPrice}
+                      clubCardName={clubCardName}
+                      onClubCardNameChange={setClubCardName}
+                    />
+                  )}
                 </>
               )}
 
-              {submitted && (
-                <View style={[styles.successBox, { backgroundColor: colors.infoBg, borderColor: colors.success }]}>
-                  <Text style={[styles.successText, { color: colors.success }]}>
-                    ✅ Price saved! Thank you for helping the community!
+              {!product && (
+                <Button
+                  variant="ghost"
+                  onPress={handleScanAttempt}
+                  style={{ marginTop: spacing.sm, borderWidth: 2, borderColor: colors.buttonSecondary, backgroundColor: isDark ? 'transparent' : colors.greenTint }}
+                >
+                  <Text style={[styles.scanBtnLabel, { color: colors.buttonSecondary }]}>
+                    Scan a Product
                   </Text>
-                </View>
+                </Button>
               )}
-
-              {submitted && !!product && (
-                <ProductSummary product={product} />
-              )}
-
-              <PriceList
-                entries={priceEntries}
-                onConfirm={handleConfirmPrice}
-                onFlag={handleFlagPrice}
-                onAddToBasket={handleAddToBasket}
-              />
-
-              {priceEntries.length === 0 && !!product && !loading && (
-                <View style={[styles.noPricesBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderStrong }]}>
-                  <Text style={[styles.noPricesText, { color: colors.primaryGreen }]}>
-                    📭 No prices yet for this product — be the first!
-                  </Text>
-                </View>
-              )}
-
-              <Button
-                variant="ghost"
-                onPress={handleScanAttempt}
-                style={{ marginTop: spacing.sm, borderWidth: 2, borderColor: colors.buttonSecondary, backgroundColor: isDark ? 'transparent' : colors.greenTint }}
-              >
-                <Text style={[styles.scanBtnLabel, { color: colors.buttonSecondary }]}>
-                  {product ? 'Scan Another Product' : 'Scan a Product'}
-                </Text>
-              </Button>
 
             </ScrollView>
           </KeyboardAvoidingView>
@@ -291,3 +257,35 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe:              { flex: 1 },
+  centred:           { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl, gap: Spacing.lg },
+  header:            { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md },
+  headerLeft:        { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoImage:         { width: 92, height: 92, borderRadius: 2 },
+  title:             { fontSize: Typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
+  onlinePill:        { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: Radii.pill, borderWidth: 1 },
+  onlinePillText:    { fontSize: Typography.bodySmall, fontWeight: '600' },
+  scrollWrapper:     { flex: 1 },
+  scrollContent:     { flexGrow: 1, padding: Spacing.xl },
+  scanArea:          { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: Radii.lg, padding: Spacing.xxl, alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.lg, minHeight: 160, justifyContent: 'center' },
+  scanIcon:          { fontSize: 40 },
+  scanText:          { fontSize: Typography.body, textAlign: 'center' },
+  loadingRow:        { alignItems: 'center', gap: Spacing.md, marginVertical: Spacing.xl },
+  message:           { fontSize: Typography.body, textAlign: 'center' },
+  errorBox:          { padding: Spacing.md, borderRadius: Radii.sm, marginBottom: Spacing.md, borderWidth: 1 },
+  error:             { fontSize: Typography.bodySmall, textAlign: 'center' },
+  noPricesBox:       { padding: Spacing.md, borderRadius: Radii.md, marginBottom: Spacing.md, borderWidth: 1 },
+  noPricesText:      { fontSize: Typography.bodySmall, textAlign: 'center' },
+  successBox:        { padding: Spacing.lg, borderRadius: Radii.md, marginBottom: Spacing.xl, borderWidth: 1 },
+  successText:       { fontSize: Typography.body, textAlign: 'center' },
+  scanBtnSpacing:    { marginTop: Spacing.sm },
+  scanBtnLabel:      { fontSize: Typography.body, fontWeight: '700', fontFamily: 'Inter' },
+  scanningLabel:     { fontSize: Typography.bodySmall, fontWeight: '500', marginBottom: Spacing.xs },
+  storeIndicatorRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
+  changeStoreText:   { fontSize: Typography.bodySmall, fontFamily: 'Inter' },
+  cameraControlsRow: { position: 'absolute', bottom: Spacing.xxl, alignSelf: 'center', flexDirection: 'column', alignItems: 'center', gap: Spacing.sm },
+  storeError:        { fontSize: Typography.bodySmall, textAlign: 'center', marginBottom: Spacing.sm },
+  separator:         { textAlign: 'center', fontSize: Typography.bodySmall, marginTop: Spacing.xl, marginBottom: Spacing.md },
+});
