@@ -6,7 +6,6 @@ const db = SQLite.openDatabaseSync('tralai.db');
 export function useProductCache() {
 
   useEffect(() => {
-    // Create tables if they don't exist
     db.execSync(`
       CREATE TABLE IF NOT EXISTS products (
         barcode TEXT PRIMARY KEY,
@@ -30,9 +29,19 @@ export function useProductCache() {
         product_name TEXT,
         store_name TEXT,
         price REAL,
+        deal TEXT,
+        deal_price REAL,
         created_at INTEGER
       );
     `);
+
+    // Schema v1: add deal columns to existing pending_submissions tables
+    const { user_version } = db.getFirstSync<{ user_version: number }>('PRAGMA user_version') ?? { user_version: 0 };
+    if (user_version < 1) {
+      try { db.execSync('ALTER TABLE pending_submissions ADD COLUMN deal TEXT'); } catch {}
+      try { db.execSync('ALTER TABLE pending_submissions ADD COLUMN deal_price REAL'); } catch {}
+      db.execSync('PRAGMA user_version = 1');
+    }
   }, []);
 
   const getCachedProduct = (barcode: string) => {
@@ -106,18 +115,22 @@ export function useProductCache() {
     product_name: string;
     store_name: string;
     price: number;
+    deal?: string | null;
+    deal_price?: number | null;
   }) => {
     try {
       db.runSync(
-        `INSERT INTO pending_submissions 
-         (id, barcode, product_name, store_name, price, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO pending_submissions
+         (id, barcode, product_name, store_name, price, deal, deal_price, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 9),
           submission.barcode,
           submission.product_name,
           submission.store_name,
           submission.price,
+          submission.deal ?? null,
+          submission.deal_price ?? null,
           Date.now()
         ]
       );

@@ -54,3 +54,12 @@ export type AiPriceResult = {
   deal_price_per_item: number | null;
   has_deal: boolean;
 };
+
+export type DealInput = {
+  deal_type: 'qty' | 'price' | null;
+  deal_price: number | null;
+  deal_qty: number | null;
+  deal_for_qty: number | null;
+  deal_group_id: string | null;
+  is_mixed: boolean;
+};

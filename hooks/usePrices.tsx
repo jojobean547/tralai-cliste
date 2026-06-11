@@ -17,455 +17,64 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { useAlert } from '@/hooks/useAlert';
-import { useAuth } from '@/hooks/useAuth';
-import { useBasket } from '@/hooks/useBasket';
-import { useNetwork } from '@/hooks/useNetwork';
-import { useProductCache } from '@/hooks/useProductCache';
-import { extractDealInfo, scanPriceTag } from '@/services/aiService';
-import {
-  confirmPrice,
-  deduplicateByStoreAndPrice,
-  fetchPrices,
-  flagPrice,
-  submitPrice,
-} from '@/services/priceService';
-import { fetchProduct } from '@/services/productService';
-import { PriceEntry, PriceSubmission, Product } from '@/types/index';
-import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-type PendingSubmission = PriceSubmission & { id: string };
+import { usePriceActions } from '@/hooks/usePriceActions';
+import { usePriceSubmission } from '@/hooks/usePriceSubmission';
+import { useProductLookup } from '@/hooks/useProductLookup';
+import { useCallback } from 'react';
 
 export function usePrices() {
-  const [priceEntries, setPriceEntries] = useState<PriceEntry[]>([]);
-  const [product, setProduct] = useState<Product | null>(null);
-  const [price, setPrice] = useState('');
-  const [selectedStore, setSelectedStore] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [hasClubCard, setHasClubCard] = useState(false);
-  const [clubCardPrice, setClubCardPrice] = useState('');
-  const [clubCardName, setClubCardName] = useState('');
-  const [dealQuantity, setDealQuantity] = useState(1);
-  const [dealTotal, setDealTotal] = useState<number | null>(null);
-  const [dealPrice, setDealPrice] = useState<number | null>(null);
-  const [dealText, setDealText] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const scanInProgressRef = useRef(false);
-
-  const { addItem, basket } = useBasket();
-  const { isOnline } = useNetwork();
-  const { isGuest } = useAuth();
   const { showAlert, alertProps } = useAlert();
-  const {
-    getCachedProduct,
-    cacheProduct,
-    getCachedPrices,
-    cachePrices,
-    addPendingSubmission,
-    getPendingSubmissions,
-    removePendingSubmission,
-  } = useProductCache();
 
-  // Sync queued offline submissions when coming back online
-  useEffect(() => {
-    if (!isOnline) return;
-    const pending = getPendingSubmissions() as PendingSubmission[];
-    if (pending.length === 0) return;
+  const lookup = useProductLookup();
+  const submission = usePriceSubmission({
+    product: lookup.product,
+    priceEntries: lookup.priceEntries,
+    updatePriceEntries: lookup.updatePriceEntries,
+    showAlert,
+  });
+  const actions = usePriceActions({
+    priceEntries: lookup.priceEntries,
+    updatePriceEntries: lookup.updatePriceEntries,
+    showAlert,
+  });
 
-    (async () => {
-      for (const sub of pending) {
-        try {
-          await submitPrice({
-            barcode: sub.barcode,
-            product_name: sub.product_name,
-            store_name: sub.store_name,
-            price: sub.price,
-          });
-          removePendingSubmission(sub.id);
-        } catch {
-          // Leave in queue for next sync attempt
-        }
-      }
-    })();
-  }, [isOnline]);
-
-  // ─── Product + price lookup ────────────────────────────────────────────────
-
-  const lookUpProduct = async (barcode: string) => {
-    // Bug #5: ref guard prevents concurrent lookups
-    if (scanInProgressRef.current) return;
-    scanInProgressRef.current = true;
-
-    setLoading(true);
-    setError('');
-    setProduct(null);
-    setPrice('');
-    setSubmitted(false);
-    setDealQuantity(1);
-    setPriceEntries([]);
-    setDealTotal(null);
-
-    const cachedProduct = getCachedProduct(barcode) as Product | null;
-    const cachedPrices = getCachedPrices(barcode) as PriceEntry[];
-
-    try {
-      if (cachedProduct) setProduct({ ...cachedProduct, barcode });
-      if (cachedPrices.length > 0) setPriceEntries(cachedPrices);
-
-      if (!isOnline) {
-        setError(
-          cachedProduct
-            ? '📡 You\'re offline — showing cached data. Prices may not be up to date.'
-            : '📡 You\'re offline. This product hasn\'t been scanned before so we don\'t have it cached yet.'
-        );
-        return;
-      }
-
-      // Fetch product from Open Food Facts — parse errors return null, network errors throw
-      try {
-        const freshProduct = await fetchProduct(barcode);
-        if (freshProduct) {
-          setProduct(freshProduct);
-          cacheProduct(barcode, freshProduct);
-        } else if (!cachedProduct) {
-          setError('Product not found in database');
-        }
-      } catch {
-        if (!cachedProduct) {
-          setError('🔧 Product database is temporarily unavailable. Please try again later.');
-        }
-      }
-
-      // Fetch community prices from Supabase
-      try {
-        const prices = await fetchPrices(barcode);
-        if (prices.length > 0) {
-          setPriceEntries(deduplicateByStoreAndPrice(prices));
-          cachePrices(barcode, prices);
-        }
-      } catch {
-        if (!cachedPrices.length) {
-          setError('🌐 Could not connect. Check your internet connection.');
-        }
-      }
-    } finally {
-      setLoading(false);
-      scanInProgressRef.current = false; // always reset — fixes offline early-return leak
-    }
-  };
-
-  // ─── Price submission ──────────────────────────────────────────────────────
-
-  const proceedWithSubmit = async (parsedPrice: number) => {
-    if (!product) return;
-    setSaving(true);
-    setError('');
-
-    try {
-      const parsedClubCardPrice = hasClubCard && clubCardPrice ? parseFloat(clubCardPrice) : null;
-      const resolvedClubCardName = hasClubCard && clubCardName ? clubCardName : null;
-      const resolvedDeal = dealTotal !== null && dealText ? dealText : null;
-
-      if (!isOnline) {
-        addPendingSubmission({
-          barcode: product.barcode,
-          product_name: product.product_name || 'Unknown',
-          store_name: selectedStore,
-          price: parsedPrice,
-        });
-        setSubmitted(true);
-        return;
-      }
-
-      await submitPrice({
-        barcode: product.barcode,
-        product_name: product.product_name || 'Unknown',
-        store_name: selectedStore,
-        price: parsedPrice,
-        deal: resolvedDeal,
-        deal_price: dealPrice ?? null,
-        club_card_price: parsedClubCardPrice,
-        club_card_name: resolvedClubCardName,
-      });
-      setSubmitted(true);
-
-      const prices = await fetchPrices(product.barcode);
-      if (prices.length > 0) {
-        setPriceEntries(deduplicateByStoreAndPrice(prices));
-        cachePrices(product.barcode, prices);
-      }
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSubmitPrice = () => {
-    if (isGuest) {
-      setError('Please sign in to submit prices');
-      return;
-    }
-
-    if (!price || !selectedStore) {
-      setError('Please enter a price and select a store');
-      return;
-    }
-
-    const parsedPrice = parseFloat(price);
-
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      setError('Please enter a valid price');
-      return;
-    }
-
-    if (parsedPrice >= 500) {
-      setError('Price seems too high — is this a grocery item?');
-      return;
-    }
-
-    if (parsedPrice <= 0.01) {
-      setError('Price seems too low — please check and try again');
-      return;
-    }
-
-    if (priceEntries.length > 2) {
-      const avg = priceEntries.reduce((sum, e) => sum + e.price, 0) / priceEntries.length;
-      if (parsedPrice > avg * 3 || parsedPrice < avg / 3) {
-        showAlert({
-          title: '⚠️ Unusual price',
-          message: `The average price for this product is €${avg.toFixed(2)}. You entered €${parsedPrice.toFixed(2)}.\n\nAre you sure this is correct?`,
-          buttons: [
-            { text: 'Yes, submit anyway', onPress: () => proceedWithSubmit(parsedPrice) },
-            { text: 'Let me check', style: 'cancel' },
-          ],
-        });
-        return;
-      }
-    }
-
-    proceedWithSubmit(parsedPrice);
-  };
-
-  // ─── Confirm / flag ────────────────────────────────────────────────────────
-
-  const handleConfirmPrice = async (entryId: number) => {
-    const entry = priceEntries.find(e => e.id === entryId);
-    if (!entry) return;
-
-    try {
-      await confirmPrice(entryId, entry.confirms);
-      // Bug #7: re-sort after confirms changes the ordering
-      setPriceEntries(prev =>
-        deduplicateByStoreAndPrice(
-          prev.map(e => e.id === entryId ? { ...e, confirms: entry.confirms + 1 } : e)
-        )
-      );
-      showAlert({ title: '👍 Thanks!', message: 'You confirmed this price is correct.', buttons: [{ text: 'OK' }] });
-    } catch {
-      showAlert({ title: 'Error', message: 'Could not confirm price. Please try again.', buttons: [{ text: 'OK' }] });
-    }
-  };
-
-  const handleFlagPrice = (entryId: number) => {
-    showAlert({
-      title: '🚩 Flag this price',
-      message: 'Is this price incorrect or suspicious?',
-      buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Yes, flag it',
-          style: 'destructive',
-          onPress: async () => {
-            const entry = priceEntries.find(e => e.id === entryId);
-            if (!entry) return;
-
-            try {
-              const { hidden } = await flagPrice(entryId, entry.flags);
-              if (hidden) {
-                setPriceEntries(prev => prev.filter(e => e.id !== entryId));
-                showAlert({ title: '✅ Reported', message: 'This price has been hidden pending review. Thank you!', buttons: [{ text: 'OK' }] });
-              } else {
-                // Bug #7: re-sort after flags changes the ordering
-                setPriceEntries(prev =>
-                  deduplicateByStoreAndPrice(
-                    prev.map(e => e.id === entryId ? { ...e, flags: entry.flags + 1 } : e)
-                  )
-                );
-                showAlert({ title: '✅ Reported', message: 'Thank you for helping keep our data accurate!', buttons: [{ text: 'OK' }] });
-              }
-            } catch {
-              showAlert({ title: 'Error', message: 'Could not flag price. Please try again.', buttons: [{ text: 'OK' }] });
-            }
-          },
-        },
-      ],
-    });
-  };
-
-  // ─── AI price tag scan ─────────────────────────────────────────────────────
-
-  const handleScanPriceTag = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      showAlert({ title: 'Permission needed', message: 'Please allow camera access to scan price tags.', buttons: [{ text: 'OK' }] });
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7 });
-    if (result.canceled || !result.assets?.length || !result.assets[0].base64) return;
-
-    setAiLoading(true);
-    setError('');
-
-    try {
-      const priceData = await scanPriceTag(result.assets[0].base64);
-      if (typeof priceData.single_price !== 'number' || !isFinite(priceData.single_price) || priceData.single_price <= 0) {
-        throw new Error('Could not read a valid price from this image. Please try again or enter manually.');
-      }
-      setPrice(String(priceData.single_price));
-      if (priceData.has_deal && priceData.deal) setDealText(priceData.deal);
-
-      let message = `Single price: €${priceData.single_price}`;
-      if (priceData.has_deal && priceData.deal) {
-        message += `\n\n🏷️ Deal found: ${priceData.deal}`;
-        if (priceData.deal_price_per_item) {
-          message += `\n💰 Price per item with deal: €${priceData.deal_price_per_item.toFixed(2)}`;
-        }
-        message += `\n\nThe single price has been filled in. You can change it to the deal price per item if you prefer.`;
-      } else {
-        message += `\n\nDoes this look right? You can correct it before submitting.`;
-      }
-
-      showAlert({
-        title: '💰 Price detected!',
-        message,
-        buttons: [
-          { text: 'Use single price' },
-          priceData.deal_price_per_item
-            ? {
-                text: `Use deal price (€${priceData.deal_price_per_item.toFixed(2)})`,
-                onPress: () => {
-                  const { quantity, totalPrice } = extractDealInfo(
-                    priceData.deal || '',
-                    priceData.deal_price_per_item!,
-                    priceData.single_price
-                  );
-                  const safeQuantity = Math.min(quantity, 20); // Bug #16: cap AI-returned quantity
-                  setPrice(String(priceData.deal_price_per_item));
-                  setDealPrice(priceData.deal_price_per_item);
-                  setDealQuantity(safeQuantity);
-                  setDealTotal(totalPrice);
-                  if (safeQuantity > 1) {
-                    showAlert({
-                      title: '🛒 Deal quantity set!',
-                      message: `Quantity set to ${safeQuantity}.\nBasket total will show exactly €${totalPrice.toFixed(2)}`,
-                      buttons: [{ text: 'Perfect!' }],
-                    });
-                  }
-                },
-              }
-            : { text: 'OK' },
-        ],
-      });
-    } catch (e: any) {
-      showAlert({ title: 'Could not read price', message: e.message || 'Please try again or enter manually.', buttons: [{ text: 'OK' }] });
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  // ─── Basket ────────────────────────────────────────────────────────────────
-
-  const handleAddToBasket = (entry: PriceEntry) => {
-    if (!product) return;
-
-    const alreadyInBasket = basket.some(
-      item => item.barcode === product.barcode && item.store_name === entry.store_name
-    );
-    if (alreadyInBasket) {
-      showAlert({ title: 'Already in basket', message: 'This item from this store is already in your basket.', buttons: [{ text: 'OK' }] });
-      return;
-    }
-
-    addItem({
-      barcode: product.barcode,
-      product_name: product.product_name || 'Unknown product',
-      image_url: product.image_url || null,
-      store_name: entry.store_name,
-      price: entry.price,
-      quantity: dealQuantity,
-      dealTotal: dealTotal ?? undefined,
-      deal: entry.deal ?? null,
-      club_card_price: entry.club_card_price ?? null,
-      club_card_name: entry.club_card_name ?? null,
-      deal_price: entry.deal_price ?? null,
-    });
-
-    const msg = dealQuantity > 1
-      ? `${product.product_name} × ${dealQuantity} added (deal quantity)`
-      : `${product.product_name} added to your basket.`;
-
-    showAlert({ title: 'Added! 🛒', message: msg, buttons: [{ text: 'OK' }] });
-    setDealQuantity(1);
-  };
-
-  // ─── Reset ─────────────────────────────────────────────────────────────────
+  // Reset submission form state before starting a new barcode lookup
+  const lookUpProduct = useCallback(async (barcode: string) => {
+    submission.resetForNewScan();
+    await lookup.lookUpProduct(barcode);
+  }, [lookup.lookUpProduct, submission.resetForNewScan]);
 
   const resetScan = useCallback(() => {
-    setProduct(null);
-    setError('');
-    setSubmitted(false);
-    setPriceEntries([]);
-    setPrice('');
-    setDealQuantity(1);
-    setDealTotal(null);
-    setDealPrice(null);
-    setHasClubCard(false);
-    setClubCardPrice('');
-    setClubCardName('');
-    setDealText('');
-    scanInProgressRef.current = false;
-    setAiLoading(false);
-  }, []);
-
-  const handlePriceChange = (text: string) => {
-    setPrice(text);
-    setDealTotal(null);
-  };
+    lookup.resetLookup();
+    submission.resetSubmission();
+  }, [lookup.resetLookup, submission.resetSubmission]);
 
   return {
     // State
-    priceEntries,
-    product,
-    price,
-    selectedStore,
-    setSelectedStore,
-    submitted,
-    saving,
-    aiLoading,
-    hasClubCard,
-    setHasClubCard,
-    clubCardPrice,
-    setClubCardPrice,
-    clubCardName,
-    setClubCardName,
-    dealQuantity,
-    dealTotal,
-    error,
-    loading,
+    priceEntries: lookup.priceEntries,
+    product: lookup.product,
+    price: submission.price,
+    selectedStore: submission.selectedStore,
+    setSelectedStore: submission.setSelectedStore,
+    submitted: submission.submitted,
+    saving: submission.saving,
+    aiLoading: false as const,
+    clubCardPrice: submission.clubCardPrice,
+    setClubCardPrice: submission.setClubCardPrice,
+    clubCardName: submission.clubCardName,
+    setClubCardName: submission.setClubCardName,
+    dealQuantity: submission.dealQuantity,
+    dealTotal: submission.dealTotal,
+    error: submission.error || lookup.error,
+    loading: lookup.loading,
     // Handlers
     lookUpProduct,
-    handleSubmitPrice,
-    handleConfirmPrice,
-    handleFlagPrice,
-    handleScanPriceTag,
-    handleAddToBasket,
-    handlePriceChange,
+    handleSubmitPrice: submission.handleSubmitPrice,
+    handleConfirmPrice: actions.handleConfirmPrice,
+    handleFlagPrice: actions.handleFlagPrice,
+    handleScanPriceTag: () => {},
+    handleAddToBasket: submission.handleAddToBasket,
+    handlePriceChange: submission.handlePriceChange,
     resetScan,
     // Alert props — spread onto <AppAlert> in the consuming screen
     alertProps,

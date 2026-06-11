@@ -51,6 +51,8 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
       marginBottom: spacing.sm,
     },
     card: { marginBottom: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+    
+    storeRow: { marginBottom: spacing.xs },
 
     mainRow: {
       flexDirection: 'row',
@@ -58,15 +60,14 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
       justifyContent: 'space-between',
     },
     leftCol:  { flex: 1, alignItems: 'flex-start', justifyContent: 'center', gap: spacing.xs },
-    rightCol: { alignItems: 'flex-end', justifyContent: 'center', paddingHorizontal: spacing.sm },
+    rightCol: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     price:    { fontSize: typography.heading1, fontWeight: typography.bold, fontFamily: 'Inter' },
-    bestLabel: { fontSize: typography.bodySmall, fontWeight: typography.bold, fontFamily: 'Inter' },
 
     voteRow: { flexDirection: 'row', alignItems: 'center' },
     voteText: { fontSize: typography.body, fontFamily: 'Inter' },
     voteBtn:  { paddingHorizontal: spacing.xs, paddingVertical: 0 },
     ageText:  { fontSize: typography.tiny, fontFamily: 'Inter' },
-    addBtn:   { alignSelf: 'center', marginLeft: spacing.xs },
+    addBtn:   { alignSelf: 'center' },
     addLabel: { fontSize: typography.bodySmall, fontWeight: '700', fontFamily: 'Inter' },
     clubCardRow: {
       flexDirection: 'row',
@@ -76,13 +77,9 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
       borderRadius: radii.sm,
       paddingHorizontal: spacing.sm,
       paddingVertical: 2,
-      marginTop: spacing.xs,
-      alignSelf: 'flex-end',
     },
-    clubCardPrice: { fontSize: typography.tiny, fontWeight: '700', fontFamily: 'Inter' },
-    clubCardName:  { fontSize: typography.tiny, fontFamily: 'Inter' },
+    clubCardPrice: { fontSize: typography.heading1, fontWeight: '700', fontFamily: 'Inter' },
     dealBadge: {
-      alignSelf: 'flex-start',
       backgroundColor: 'rgba(242, 183, 5, 0.15)',
       borderRadius: radii.pill,
       paddingHorizontal: spacing.sm,
@@ -100,14 +97,14 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
 
         return (
           <Card key={entry.id} variant={isCheapest ? 'highlight' : 'default'} style={styles.card}>
+
+            {/* NEW: store badge on its own row */}
+            <View style={styles.storeRow}>
+              <StoreBadge store={entry.store_name} size="md" />
+            </View>
+
             <View style={styles.mainRow}>
               <View style={styles.leftCol}>
-                <StoreBadge store={entry.store_name} size="md" />
-                {!!entry.deal && (
-                  <View style={styles.dealBadge}>
-                    <Text style={[styles.dealBadgeText, { color: colors.accentGold }]}>🏷️ {entry.deal}</Text>
-                  </View>
-                )}
                 <Text style={[styles.ageText, { color: colors.textSecondary }]}>
                   {getDaysAgo(entry.created_at)}
                 </Text>
@@ -126,37 +123,31 @@ export default function PriceList({ entries, onConfirm, onFlag, onAddToBasket }:
               </View>
 
               <View style={styles.rightCol}>
-                <Text style={[styles.price, { color: colors.textPrimary }]}>
-                  €{entry.price.toFixed(2)}
-                </Text>
+                {!!entry.deal && (
+                  <View style={styles.dealBadge}>
+                    <Text style={[styles.dealBadgeText, { color: colors.accentGold }]}>🏷️ {entry.deal}</Text>
+                  </View>
+                )}
                 {entry.club_card_price != null && (
                   <View style={styles.clubCardRow}>
                     <Text style={[styles.clubCardPrice, { color: colors.accentGold }]}>
                       💳 €{entry.club_card_price.toFixed(2)}
                     </Text>
-                    {!!entry.club_card_name && (
-                      <Text style={[styles.clubCardName, { color: colors.textSecondary }]}>
-                        {entry.club_card_name}
-                      </Text>
-                    )}
                   </View>
                 )}
-                {isCheapest && (
-                  entry.club_card_price != null && entry.club_card_price < entry.price
-                    ? <Text style={[styles.bestLabel, { color: colors.accentGold }]}>💳 Best with card</Text>
-                    : <Text style={[styles.bestLabel, { color: colors.primaryGreen }]}>↘ Best Price</Text>
-                )}
+                <Text style={[styles.price, { color: colors.textPrimary }]}>
+                  €{entry.price.toFixed(2)}
+                </Text>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  fullWidth={false}
+                  onPress={() => onAddToBasket(entry)}
+                  style={[styles.addBtn, { backgroundColor: colors.greenTintBg, borderWidth: 2, borderColor: colors.greenTintText }]}
+                >
+                  <Text style={[styles.addLabel, { color: colors.greenTintText }]}>Add</Text>
+                </Button>
               </View>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                fullWidth={false}
-                onPress={() => onAddToBasket(entry)}
-                style={[styles.addBtn, { backgroundColor: colors.greenTintBg, borderWidth: 1.5, borderColor: colors.greenTintText }]}
-              >
-                <Text style={[styles.addLabel, { color: colors.greenTintText }]}>Add</Text>
-              </Button>
             </View>
           </Card>
         );

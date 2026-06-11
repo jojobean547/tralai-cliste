@@ -47,7 +47,7 @@ export default function LoginScreen() {
     container:      { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
     logoContainer:  { alignItems: 'center', marginBottom: spacing.xl },
     logoBox:        { width: 160, height: 160, borderRadius: radii.lg, borderWidth: 2, borderColor: isDark ? colors.buttonPrimary : colors.primaryGreen, backgroundColor: isDark ? 'transparent' : colors.greenTint, justifyContent: 'center', alignItems: 'center', marginBottom: spacing.md, overflow: 'hidden' },
-    logoImage:      { width: 160, height: 160 },
+    logoImage:      { width: 170, height: 170 },
     appName:        { fontSize: typography.heading1, fontWeight: typography.bold, fontFamily: 'Inter', marginBottom: spacing.xs },
     taglineIrish:   { fontSize: typography.bodySmall, fontStyle: 'italic', marginBottom: 2, textAlign: 'center' },
     taglineEn:      { fontSize: typography.caption, textAlign: 'center' },
@@ -87,7 +87,7 @@ export default function LoginScreen() {
         <Card style={styles.featuresCard}>
           {[
             { icon: '🔍', text: 'Compare prices across Irish stores' },
-            { icon: '📷', text: 'AI price tag scanning' },
+            //{ icon: '📷', text: 'AI price tag scanning' },
             { icon: '🏷️', text: 'Deal detection (3 for €5)' },
             { icon: '📡', text: 'Works offline' },
           ].map((f, i) => (

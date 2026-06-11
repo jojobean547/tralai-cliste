@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import { useTheme } from '@/hooks/useTheme';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { useTheme } from '@/hooks/useTheme';
 
 type Variant = 'default' | 'highlight' | 'danger';
 
@@ -34,7 +34,7 @@ export function Card({ variant = 'default', children, onPress, style }: CardProp
 
   const variantStyles: Record<Variant, { bg: string; border: string; borderWidth: number }> = {
     default:   { bg: colors.surface,   border: colors.border,       borderWidth: 1 },
-    highlight: { bg: colors.surface,   border: colors.primaryGreen, borderWidth: 1.5 },
+    highlight: { bg: colors.surface,   border: colors.primaryGreen, borderWidth: 3.5 },
     danger:    { bg: colors.errorBg,   border: colors.errorBorder,  borderWidth: 1 },
   };
 

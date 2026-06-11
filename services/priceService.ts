@@ -55,6 +55,15 @@ export async function fetchPrices(barcode: string): Promise<PriceEntry[]> {
 }
 
 export async function submitPrice(submission: PriceSubmission): Promise<void> {
+  const { error: productError } = await supabase
+    .from('products')
+    .upsert(
+      { barcode: submission.barcode, name: submission.product_name },
+      { onConflict: 'barcode', ignoreDuplicates: true }
+    );
+
+  if (productError) throw new Error(productError.message);
+
   const { error } = await supabase.from('prices').insert(submission);
 
   if (error) {
